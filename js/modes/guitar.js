@@ -11,7 +11,7 @@ import { resumeAudio } from '../audio.js';
 
 const LANES = 5, LANE_W = 1, START_X = -(LANES * LANE_W) / 2 + LANE_W / 2, TARGET_Z = 5;
 const KEYS = ['a', 's', 'd', 'f', 'g'];
-const SPEEDS = { easy: 8, medium: 12, hard: 16 };
+const SPEEDS = { easy: 7, medium: 10, hard: 14 };
 
 export class GuitarMode {
   constructor(host, { onFinish, onExit, difficulty = 'medium' }) {
@@ -125,33 +125,49 @@ export class GuitarMode {
       new THREE.MeshStandardMaterial({ color: '#15151f', emissive: '#5b5bff', emissiveIntensity: 0.3 }));
     bar.position.set(0, 0.06, TARGET_Z); scene.add(bar);
 
-    // a couple of amps + neon sign for the dive-bar vibe
-    const ampGeo = new THREE.BoxGeometry(3, 4, 2);
-    const ampMat = new THREE.MeshStandardMaterial({ color: '#141414', roughness: 0.7 });
-    [-5.5, 5.5].forEach((x) => { const a = new THREE.Mesh(ampGeo, ampMat); a.position.set(x, 2, TARGET_Z - 12); scene.add(a); });
-    const sign = new THREE.Mesh(new THREE.BoxGeometry(13, 2.4, 0.2),
-      new THREE.MeshStandardMaterial({ color: '#ec4899', emissive: '#ec4899', emissiveIntensity: 1.6 }));
-    sign.position.set(0, 9, TARGET_Z - 14); scene.add(sign);
+    // ---- dive-bar stage: back wall, riser, amps, drum kit, neon ----
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(60, 28),
+      new THREE.MeshStandardMaterial({ color: '#0a0712', roughness: 0.95 }));
+    wall.position.set(0, 9, TARGET_Z - 19); scene.add(wall);
+    const riser = new THREE.Mesh(new THREE.BoxGeometry(26, 0.6, 9),
+      new THREE.MeshStandardMaterial({ color: '#1a1322', roughness: 0.8 }));
+    riser.position.set(0, 0.3, TARGET_Z - 13.5); scene.add(riser);
 
-    // Mansfield's band — the pixel sprite himself, drawn to a canvas texture
-    // and stood up as a billboard. Same sprite code as the 2D modes.
+    const ampGeo = new THREE.BoxGeometry(3, 4, 2);
+    const ampMat = new THREE.MeshStandardMaterial({ color: '#15110f', roughness: 0.7 });
+    const grilleMat = new THREE.MeshStandardMaterial({ color: '#090909', roughness: 0.9 });
+    [-6.4, 6.4].forEach((x) => {
+      const a = new THREE.Mesh(ampGeo, ampMat); a.position.set(x, 2.6, TARGET_Z - 12.5); scene.add(a);
+      const gr = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3), grilleMat); gr.position.set(x, 2.6, TARGET_Z - 11.49); scene.add(gr);
+    });
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(13, 2.4, 0.2),
+      new THREE.MeshStandardMaterial({ color: '#ec4899', emissive: '#ec4899', emissiveIntensity: 1.8 }));
+    sign.position.set(0, 10.6, TARGET_Z - 18); scene.add(sign);
+
+    // drum kit
+    const kit = new THREE.Group(); kit.position.set(-3.4, 0.6, TARGET_Z - 11.8);
+    const red = new THREE.MeshStandardMaterial({ color: '#8a1f2a', roughness: 0.4, metalness: 0.2 });
+    const drumhead = new THREE.MeshStandardMaterial({ color: '#e8e4da', roughness: 0.8 });
+    const bd = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1.6, 24), red); bd.rotation.x = Math.PI / 2; bd.position.set(0, 0.7, 0.5); kit.add(bd);
+    const bdh = new THREE.Mesh(new THREE.CircleGeometry(1.15, 24), drumhead); bdh.position.set(0, 0.7, 1.32); kit.add(bdh);
+    [[-1.1, 1.5, -0.2], [0.5, 1.6, -0.4]].forEach(([x, y, z]) => { const tom = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.6, 18), red); tom.position.set(x, y, z); kit.add(tom); });
+    const cym = new THREE.MeshStandardMaterial({ color: '#caa83c', roughness: 0.2, metalness: 0.9 });
+    [[-1.9, 2.6, -0.4], [1.6, 2.8, -0.6]].forEach(([x, y, z]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.04, 18), cym); c.position.set(x, y, z); kit.add(c); });
+    scene.add(kit);
+
+    // ---- the band: ONE Mansfield (the star) + 2 human bandmates ----
     this.band = [];
-    const makeRocker = (x, scale, off) => {
-      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
-      const ctx = cv.getContext('2d');
-      const tex = new THREE.CanvasTexture(cv);
-      tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.6 * scale, 2.6 * scale),
-        new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.4 }));
-      const baseY = 1.35 * scale;
-      plane.position.set(x, baseY, TARGET_Z - 13);
-      scene.add(plane);
-      this.band.push({ ctx, tex, plane, baseY, scale, off, frame: -1 });
-    };
-    makeRocker(-3.6, 1.0, 30);
-    makeRocker(0, 1.55, 0);   // lead Mansfield, center stage
-    makeRocker(3.6, 1.0, 70);
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+    const ctx = cv.getContext('2d');
+    const tex = new THREE.CanvasTexture(cv);
+    tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
+    const star = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 3.0),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.4 }));
+    star.position.set(0.4, 1.55, TARGET_Z - 11.5); scene.add(star);
+    this.band.push({ ctx, tex, plane: star, baseY: 1.55, scale: 1.1, off: 0, frame: -1 });
+
+    this.humans = [this.makeHuman(-3.4, 'drummer', TARGET_Z - 13.3), this.makeHuman(4.2, 'guitarist', TARGET_Z - 12.2)];
+    this.humans.forEach((hm) => scene.add(hm.group));
 
     // note pool (reused; songs can have hundreds of onsets)
     this.pool = [];
@@ -173,6 +189,39 @@ export class GuitarMode {
     if (aspect < 1.0) { this.camera.position.set(0, 6.5, TARGET_Z + 5.5); this.camera.lookAt(0, 1.5, TARGET_Z - 10); }
     else { this.camera.position.set(0, 4.2, TARGET_Z + 4.2); this.camera.lookAt(0, 0, TARGET_Z - 10); }
     this.camera.updateProjectionMatrix();
+  }
+
+  /* ---- a low-poly human bandmate (box figure) ----------------------------- */
+  makeHuman(x, kind, z) {
+    const T = THREE;
+    const skin = new T.MeshStandardMaterial({ color: '#d9a06b', roughness: 0.7 });
+    const dark = new T.MeshStandardMaterial({ color: '#1b1b22', roughness: 0.6 });
+    const hairM = new T.MeshStandardMaterial({ color: '#15110f', roughness: 0.85 });
+    const g = new T.Group(); g.position.set(x, 0, z);
+    const body = new T.Mesh(new T.BoxGeometry(1.1, 1.5, 0.7), dark); body.position.y = 1.95; g.add(body);
+    const head = new T.Mesh(new T.BoxGeometry(0.75, 0.75, 0.75), skin); head.position.y = 3.05; g.add(head);
+    const hair = new T.Mesh(new T.BoxGeometry(0.85, 0.42, 0.85), hairM); hair.position.set(0, 3.4, -0.05); g.add(hair);
+    const parts = { group: g, head, kind, leftArm: null, rightArm: null, strumArm: null };
+
+    if (kind === 'drummer') {
+      const mkArm = (sx) => {
+        const grp = new T.Group(); grp.position.set(sx, 2.45, 0.1);
+        const arm = new T.Mesh(new T.CylinderGeometry(0.13, 0.13, 1.3), skin); arm.position.set(0, -0.5, 0.3); arm.rotation.x = -0.6; grp.add(arm);
+        const stick = new T.Mesh(new T.CylinderGeometry(0.04, 0.04, 1.1), new T.MeshStandardMaterial({ color: '#d8c9a0' })); stick.position.set(0, -1.0, 0.85); stick.rotation.x = -1.0; grp.add(stick);
+        g.add(grp); return grp;
+      };
+      parts.leftArm = mkArm(-0.55); parts.rightArm = mkArm(0.55);
+    } else {
+      [-0.3, 0.3].forEach((lx) => { const leg = new T.Mesh(new T.BoxGeometry(0.35, 1.6, 0.35), dark); leg.position.set(lx, 0.8, 0); g.add(leg); });
+      const guitar = new T.Group(); guitar.position.set(0.1, 1.95, 0.5); guitar.rotation.z = 0.5;
+      const gb = new T.Mesh(new T.BoxGeometry(1.1, 0.75, 0.12), new T.MeshStandardMaterial({ color: '#c8a24a', metalness: 0.4, roughness: 0.3 })); gb.position.set(0.5, -0.2, 0); guitar.add(gb);
+      const neck = new T.Mesh(new T.BoxGeometry(1.4, 0.14, 0.06), new T.MeshStandardMaterial({ color: '#3a2a20' })); neck.position.set(-0.8, 0, 0); guitar.add(neck);
+      g.add(guitar);
+      const strum = new T.Group(); strum.position.set(0.6, 2.45, 0.35);
+      const sa = new T.Mesh(new T.BoxGeometry(0.28, 1.1, 0.28), dark); sa.position.y = -0.5; strum.add(sa); g.add(strum);
+      parts.strumArm = strum;
+    }
+    return parts;
   }
 
   /* ---- input -------------------------------------------------------------- */
@@ -280,6 +329,20 @@ export class GuitarMode {
         r.tex.needsUpdate = true;
       }
       r.plane.position.y = r.baseY + Math.abs(Math.sin(now * 6 + r.off)) * 0.2 * r.scale;
+    }
+
+    // human bandmates jamming
+    const beat = t < 0 ? 0 : 1;
+    for (const hm of this.humans) {
+      if (hm.kind === 'drummer') {
+        if (hm.leftArm) hm.leftArm.rotation.x = Math.sin(now * 9) * 0.6 * beat - 0.3;
+        if (hm.rightArm) hm.rightArm.rotation.x = Math.cos(now * 9) * 0.6 * beat - 0.3;
+        hm.head.rotation.z = Math.sin(now * 4) * 0.12;
+      } else {
+        if (hm.strumArm) hm.strumArm.rotation.x = Math.sin(now * 16) * 0.4 * beat;
+        hm.head.rotation.x = Math.abs(Math.sin(now * 6)) * 0.25 * beat;
+        hm.group.position.y = Math.sin(now * 3) * 0.06 * beat;
+      }
     }
 
     // animate lights

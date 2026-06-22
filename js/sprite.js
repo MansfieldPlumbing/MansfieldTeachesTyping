@@ -4,14 +4,17 @@
    modes can stamp him anywhere. */
 
 // 0 transparent · 1 cap · 2 hair/boots · 3 skin · 4 overalls · 5 shirt · 6 button
+// Mansfield's own palette — ~10-15% off the classic plumber so the suits stay
+// away: a jade cap (not Luigi green), denim-indigo overalls, and an auburn /
+// ginger 'stache + hair instead of brown. Same silhouette, different guy.
 const PALETTE = {
   0: null,
-  1: '#3fae6b', // green cap
-  2: '#3a2a20', // hair / boots
+  1: '#1f9e74', // jade cap
+  2: '#5a3320', // auburn hair / 'stache / boots
   3: '#f2c79c', // skin
-  4: '#3f7fd6', // blue overalls
+  4: '#34529e', // denim-indigo overalls
   5: '#f4f1ea', // shirt
-  6: '#ffd23f', // button
+  6: '#c8a24a', // brass button (logo accent)
 };
 
 const IDLE = [

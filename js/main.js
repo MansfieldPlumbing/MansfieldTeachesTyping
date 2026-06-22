@@ -183,7 +183,7 @@ function animateMascot(canvas) {
   requestAnimationFrame(() => animateMascot(canvas));
 }
 
-function playGuitar(difficulty = 'medium') {
+function playGuitar(difficulty = 'easy') {
   resumeAudio();
   Music.pause(); // the stems ARE the music here
   clear(app);
