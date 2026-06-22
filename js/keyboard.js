@@ -115,5 +115,30 @@ export class Keyboard {
       `<span class="finger"><span class="dot ${dot}"></span> ${fingerLabel(targetChar)} &nbsp;·&nbsp; next: <b>${label}</b></span>`;
   }
 
+  /** x-center of a key, in the coordinate space of `container` (a DOM el). */
+  keyCenterX(char, container) {
+    const el = this.keyEls.get((char || '').toLowerCase());
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const b = container ? container.getBoundingClientRect() : { left: 0 };
+    return r.left - b.left + r.width / 2;
+  }
+
+  /** y of the keyboard's top edge, relative to `container`. */
+  topY(container) {
+    const r = this.el.getBoundingClientRect();
+    const b = container ? container.getBoundingClientRect() : { top: 0 };
+    return r.top - b.top;
+  }
+
+  /** center + size of a key, relative to `container`. */
+  keyRect(char, container) {
+    const el = this.keyEls.get((char || '').toLowerCase());
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    const b = container ? container.getBoundingClientRect() : { left: 0, top: 0 };
+    return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2, w: r.width, h: r.height };
+  }
+
   destroy() { this.el.remove(); }
 }

@@ -23,8 +23,8 @@ const MODES = {
     blurb: 'A real 3D rhythm game. Notes fall a neon fretboard — hit the lane on the beat to keep the band playing; miss and the stem drops out. Real song, real stems.',
   },
   hero: {
-    num: '03', title: 'Leak Drop', tone: 'green', cls: HeroMode,
-    blurb: 'Pure typing pressure: words leak down the pipes — type each one before it hits the floor. Clear a run and it rings out a tune.',
+    num: '03', title: 'Key Rain', tone: 'green', cls: HeroMode,
+    blurb: 'The MTT home-row drill, reborn: letters rain onto their real keys — press each as it lands. Real lessons, full keyboard, neon. (Physical keyboard.)',
   },
   focus: {
     num: '04', title: 'Focus', tone: '', cls: FocusMode,

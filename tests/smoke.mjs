@@ -47,9 +47,10 @@ try {
   await page.click('.cards .card:nth-child(3)');
   await page.waitForSelector('.lesson', { timeout: 5000 });
   await page.click('.lesson:nth-child(1)');
-  await page.waitForSelector('.stage canvas', { timeout: 5000 });
-  await typeText(page, 'ffddss');
-  console.log('hero ok — falling-notes stage renders');
+  await page.waitForSelector('.rain-layer', { timeout: 5000 });
+  await page.waitForTimeout(600);
+  await typeText(page, 'fdsfjk');
+  console.log('hero ok — key-rain layer renders');
   await page.click('.btn-exit');
   await page.waitForSelector('.lesson', { timeout: 5000 });
 
