@@ -1,0 +1,37 @@
+name: Deploy to GitHub Pages
+
+# Vanilla static site — no build step. Just publish the repo as-is.
+#
+# ONE-TIME SETUP (a human with repo admin must do this once):
+#   Settings → Pages → Build and deployment → Source: "GitHub Actions"
+# The automation token cannot enable Pages itself. If the repo is private,
+# Pages also requires GitHub Pro/Team/Enterprise — otherwise make it public.
+# After that, every push here deploys automatically.
+on:
+  push:
+    branches: [main, claude/jolly-euler-2hb8cz]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v4

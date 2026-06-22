@@ -1,0 +1,8 @@
+{
+  "_comment": "Background playlist. The game streams these in order and loops. SFX work without any of these. Every track here must be license-cleared — see CREDITS.md.",
+  "tracks": [
+    { "title": "Pixelland", "artist": "Kevin MacLeod", "src": "pixelland.mp3", "license": "CC BY 4.0" },
+    { "title": "8bit Dungeon Level", "artist": "Kevin MacLeod", "src": "8bit-dungeon-level.mp3", "license": "CC BY 4.0" },
+    { "title": "Carefree", "artist": "Kevin MacLeod", "src": "carefree.mp3", "license": "CC BY 4.0" }
+  ]
+}

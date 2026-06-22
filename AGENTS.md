@@ -1,4 +1,4 @@
-# AI Developer Directives for "I Fix the Pipes" & "Subsystem"
+# AI Developer Directives for "Mansfield Teaches Typing" & "Subsystem"
 
 These are strict, binding directives for all AI models, agents, and pairs working on this sandbox. These constraints must be loaded and adhered to with standard fail-closed precision.
 
@@ -12,6 +12,7 @@ These are strict, binding directives for all AI models, agents, and pairs workin
 
 ## 2. Technical Quality & Framework Guardrails
 
-* **Direct Web Audio Synthesis:** For chiptunes and audio effects, utilize the standard Web Audio API built-in synthesizer (`/src/audio.ts`) instead of loading external binary assets or mock players.
-* **Modular Code Structure:** Keep components separated by concerns (e.g., individual game modes and helper overlays). Do not consolidate logical units into a single file to respect token thresholds.
-* **Strict React & TypeScript Conventions:** Avoid all type-assertion casting (`any`), stabilize side effects to prevent infinite re-renders, and use pure Tailwind utility styling.
+* **Vanilla, No Build Step:** This app is plain HTML/CSS/JS using native ES modules. **Do not** introduce React, Vite, a bundler, JSX, TypeScript, or Tailwind. It must run on any static server straight from source. (art4quinn is the proof this works.)
+* **Direct Web Audio Synthesis:** For chiptunes and effects, use the Web Audio API synthesizer in `js/audio.js` rather than binary assets. Background music (copyright-free only) loads from `assets/music/` via its manifest.
+* **Modular Code Structure:** Keep concerns separated (`js/modes/*` per game mode, plus small shared helpers). Do not consolidate everything into one file.
+* **Honest Numbers:** Track WPM / accuracy / streak the same way everywhere via `js/engine.js`; do not reinvent counting per mode.

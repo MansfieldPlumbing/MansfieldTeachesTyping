@@ -1,6 +1,6 @@
 {
-  "name": "I Fix the Pipes",
-  "description": "A retro-inspired typing tutor game in the spirit of Mario Teaches Typing, featuring plumbing mechanics and multiple retro-styled skins.",
+  "name": "Mansfield Teaches Typing",
+  "description": "A love letter to Mario Teaches Typing. A vanilla HTML/CSS/JS typing tutor where Mansfield the plumber fixes pipes one key at a time — with an on-screen glassmorphic keyboard, a ghost car to race, and a grown-up Focus mode.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }
