@@ -23,7 +23,7 @@ try {
   await page.goto(BASE + '/index.html', { waitUntil: 'networkidle' });
   await page.waitForSelector('.cards .card', { timeout: 5000 });
   const cards = await page.$$eval('.cards .card h2', (els) => els.map((e) => e.textContent));
-  if (cards.length !== 3) throw new Error('expected 3 mode cards, got ' + cards.length);
+  if (cards.length !== 4) throw new Error('expected 4 mode cards, got ' + cards.length);
   console.log('landing ok — modes:', cards.join(', '));
 
   // --- Adventure ---
