@@ -1,0 +1,6 @@
+{
+  "name": "I Fix the Pipes",
+  "description": "A retro-inspired typing tutor game in the spirit of Mario Teaches Typing, featuring plumbing mechanics and multiple retro-styled skins.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
