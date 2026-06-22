@@ -5,6 +5,7 @@
 
 import * as THREE from '../../vendor/three.module.min.js';
 import { StemPlayer, LANE_COLORS, LANE_INSTRUMENTS, HIT_WINDOW, judge } from '../stem-player.js';
+import { drawMansfield } from '../sprite.js';
 import { h, clear } from '../ui.js';
 import { resumeAudio } from '../audio.js';
 
@@ -133,6 +134,26 @@ export class GuitarMode {
       new THREE.MeshStandardMaterial({ color: '#ec4899', emissive: '#ec4899', emissiveIntensity: 1.6 }));
     sign.position.set(0, 9, TARGET_Z - 14); scene.add(sign);
 
+    // Mansfield's band — the pixel sprite himself, drawn to a canvas texture
+    // and stood up as a billboard. Same sprite code as the 2D modes.
+    this.band = [];
+    const makeRocker = (x, scale, off) => {
+      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+      const ctx = cv.getContext('2d');
+      const tex = new THREE.CanvasTexture(cv);
+      tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.6 * scale, 2.6 * scale),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.4 }));
+      const baseY = 1.35 * scale;
+      plane.position.set(x, baseY, TARGET_Z - 13);
+      scene.add(plane);
+      this.band.push({ ctx, tex, plane, baseY, scale, off, frame: -1 });
+    };
+    makeRocker(-3.6, 1.0, 30);
+    makeRocker(0, 1.55, 0);   // lead Mansfield, center stage
+    makeRocker(3.6, 1.0, 70);
+
     // note pool (reused; songs can have hundreds of onsets)
     this.pool = [];
     const noteGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.18, 24);
@@ -247,6 +268,19 @@ export class GuitarMode {
     for (let l = 0; l < LANES; l++) {
       const lit = Math.max(0, 1 - (performance.now() - this.laneLit[l]) / 140);
       this.targets[l].material.emissiveIntensity = lit * 4;
+    }
+
+    // Mansfield band: re-draw sprite frames + headbang bob
+    for (const r of this.band) {
+      const tick = Math.floor(now * 16) + r.off;
+      const f = Math.floor(tick / 6);
+      if (f !== r.frame) {
+        r.frame = f;
+        r.ctx.clearRect(0, 0, 64, 64);
+        drawMansfield(r.ctx, 0, 0, 64, t < 0 ? 'idle' : 'run', tick);
+        r.tex.needsUpdate = true;
+      }
+      r.plane.position.y = r.baseY + Math.abs(Math.sin(now * 6 + r.off)) * 0.2 * r.scale;
     }
 
     // animate lights

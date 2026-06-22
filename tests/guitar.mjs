@@ -9,7 +9,7 @@ await p.waitForSelector('.cards .card');
 const titles = await p.$$eval('.cards .card h2', els => els.map(e=>e.textContent));
 console.log('modes:', titles.join(', '));
 // click Guitar God (4th card)
-await p.click('.cards .card:nth-child(4)');
+await p.click('.cards .card:nth-child(2)');
 await p.waitForSelector('.gg-stage', { timeout: 8000 });
 console.log('guitar stage mounted; waiting for stems to load + 3D init...');
 // loading overlay should disappear once stems load and three inits
