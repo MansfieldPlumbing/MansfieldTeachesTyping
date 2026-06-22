@@ -1,0 +1,119 @@
+/* The glassmorphic on-screen keyboard. It is the thing.
+   - Highlights the next key and its finger (MTT's teaching aid, modernised).
+   - On touch devices it IS the input: tap a key to type. No <input>, so the
+     native mobile keyboard never appears and steals the screen.
+   - Physical keystrokes flash the matching key too, so it stays in sync. */
+
+import { KB_ROWS, fingerFor, fingerLabel, keyMatches, needsShift } from './finger.js';
+
+const DISPLAY = { ' ': 'space' };
+
+export class Keyboard {
+  constructor(mount, { onKey } = {}) {
+    this.onKey = onKey || (() => {});
+    this.keyEls = new Map();   // lowercase char -> element
+    this.next = null;
+    this.el = document.createElement('div');
+    this.el.className = 'kb';
+    this._build();
+    mount.appendChild(this.el);
+  }
+
+  _addKey(row, label, char, cls = '') {
+    const k = document.createElement('button');
+    k.className = 'key ' + cls;
+    k.type = 'button';
+    k.tabIndex = -1;
+    k.dataset.char = char;
+    k.innerHTML = `<span class="cap">${label}</span><span class="ripple"></span>`;
+    // pointerdown (not click) for snappy, no-300ms touch response
+    k.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.press(char);
+      this.onKey(char);
+    });
+    row.appendChild(k);
+    if (char) this.keyEls.set(char.toLowerCase(), k);
+    return k;
+  }
+
+  _build() {
+    // number row
+    const r0 = this._row();
+    for (const c of KB_ROWS[0]) this._addKey(r0, c, c);
+    this._addKey(r0, '⌫', 'backspace', 'mod wide');
+
+    // qwerty row
+    const r1 = this._row();
+    this._addKey(r1, 'tab', 'tab', 'mod wide');
+    for (const c of KB_ROWS[1]) this._addKey(r1, c.toUpperCase(), c);
+
+    // home row
+    const r2 = this._row();
+    this._addKey(r2, 'caps', 'caps', 'mod wide');
+    for (const c of KB_ROWS[2]) this._addKey(r2, c === ';' ? ';' : c.toUpperCase(), c);
+    this._addKey(r2, '⏎', 'enter', 'mod wide');
+
+    // bottom row
+    const r3 = this._row();
+    this._shiftL = this._addKey(r3, 'shift', 'shift', 'mod wide');
+    for (const c of KB_ROWS[3]) this._addKey(r3, c === ',' || c === '.' || c === '/' ? c : c.toUpperCase(), c);
+    this._shiftR = this._addKey(r3, 'shift', 'shift', 'mod wide');
+
+    // space row
+    const r4 = this._row();
+    this._addKey(r4, '', ' ', 'space');
+
+    // hint / finger guide
+    this.hint = document.createElement('div');
+    this.hint.className = 'kb-hint';
+    this.el.appendChild(this.hint);
+  }
+
+  _row() { const d = document.createElement('div'); d.className = 'kb-row'; this.el.appendChild(d); return d; }
+
+  /** flash a key as if pressed (works for both taps and physical keys) */
+  press(char) {
+    const el = this.keyEls.get((char || '').toLowerCase());
+    if (!el) return;
+    el.classList.remove('press');
+    // force reflow so the animation can retrigger
+    void el.offsetWidth;
+    el.classList.add('press');
+    setTimeout(() => el.classList.remove('press'), 220);
+  }
+
+  /** highlight the next target character + its finger + needed shift */
+  setNext(targetChar) {
+    // clear
+    if (this.next) this.next.classList.remove('next', 'f-l', 'f-r');
+    this._shiftL.classList.remove('next');
+    this._shiftR.classList.remove('next');
+    this.next = null;
+
+    if (targetChar == null || targetChar === '') { this.hint.textContent = ''; return; }
+
+    const finger = fingerFor(targetChar);
+    const handCls = finger.hand === 'left' ? 'f-l' : 'f-r';
+
+    // find the on-screen key whose glyph matches
+    let match = null;
+    for (const [, el] of this.keyEls) {
+      const c = el.dataset.char;
+      if (c === 'shift' || c === 'tab' || c === 'caps' || c === 'enter' || c === 'backspace') continue;
+      if (keyMatches(c, targetChar)) { match = el; break; }
+    }
+    if (match) { match.classList.add('next', handCls); this.next = match; }
+
+    const sh = needsShift(targetChar);
+    if (sh === 'left') this._shiftL.classList.add('next');
+    if (sh === 'right') this._shiftR.classList.add('next');
+
+    const dot = finger.hand;
+    const label = targetChar === ' ' ? 'Space' : (DISPLAY[targetChar] || targetChar);
+    this.hint.innerHTML =
+      `<span class="finger"><span class="dot ${dot}"></span> ${fingerLabel(targetChar)} &nbsp;·&nbsp; next: <b>${label}</b></span>`;
+  }
+
+  destroy() { this.el.remove(); }
+}
