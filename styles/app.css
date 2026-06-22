@@ -559,6 +559,7 @@ a { color: inherit; }
    the playfield (you can read the notes through the glass).
    =========================================================================== */
 .stage.rain .field { overflow: hidden; }
+.rain-glass { position: absolute; inset: 0; z-index: 1; display: block; }
 .stage.rain .kb-mount {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; margin: 0;
   display: flex; justify-content: center;
@@ -570,10 +571,16 @@ a { color: inherit; }
 .rain-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
 .rain-note {
   position: absolute; top: 0; left: 0; transform: translate(-50%, 0);
-  font-family: var(--font-mono); font-weight: 800; line-height: 1;
-  font-size: clamp(1.4rem, 4.4vw, 2.5rem); color: var(--c);
-  text-shadow: 0 0 calc(6px + 16px * var(--glow, .5)) var(--c);
-  will-change: transform;
+  display: inline-flex; padding: 6px 11px; border-radius: 11px; white-space: nowrap;
+  font-family: var(--font-mono); font-weight: 800; line-height: 1; letter-spacing: .02em;
+  font-size: clamp(1.25rem, 3.6vw, 2.1rem); color: var(--paper);
+  background: rgba(6,16,22,.42); border: 1px solid rgba(180,220,235,.14);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 6px 18px -8px rgba(0,0,0,.6); will-change: transform;
 }
-.rain-note.pop { transition: opacity .18s ease, filter .18s ease; opacity: 0; filter: brightness(2.4) blur(1px); }
-.rain-note.leak { transition: opacity .22s ease; opacity: 0; color: var(--bad); text-shadow: 0 0 16px var(--bad); }
+.rain-note .done { opacity: .35; }
+.rain-note .cur { color: var(--c); text-shadow: 0 0 12px var(--c); }
+.rain-note.active { border-color: rgba(194,168,120,.7); box-shadow: 0 0 0 1px rgba(194,168,120,.5), 0 0 26px -6px var(--brass); }
+.rain-note.shake { outline: 2px solid var(--bad); outline-offset: 1px; }
+.rain-note.pop { transition: opacity .18s ease, filter .18s ease; opacity: 0; filter: brightness(2.2); }
+.rain-note.leak { transition: opacity .22s ease; opacity: 0; border-color: var(--bad); }
