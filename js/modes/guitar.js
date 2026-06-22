@@ -4,7 +4,7 @@
    Powered by real demucs stems of NEFFEX "Fight Back". */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { StemPlayer, LANE_COLORS, LANE_INSTRUMENTS, HIT_WINDOW, judge } from '../stem-player.js';
+import { StemPlayer, LANE_COLORS, HIT_WINDOW, judge } from '../stem-player.js';
 import { drawMansfield } from '../sprite.js';
 import { h, clear } from '../ui.js';
 import { resumeAudio } from '../audio.js';
@@ -62,9 +62,8 @@ export class GuitarMode {
 
     // touch lane pads
     this.pads = KEYS.map((key, lane) => {
-      const pad = h('button', { class: 'gg-pad', style: `--c:${LANE_COLORS[lane]}` },
-        h('span', { class: 'gg-pad-key' }, key.toUpperCase()),
-        h('span', { class: 'gg-pad-name' }, LANE_INSTRUMENTS[lane]));
+      const pad = h('button', { class: 'gg-pad', type: 'button', 'aria-label': `Lane ${key.toUpperCase()}`, style: `--c:${LANE_COLORS[lane]}` },
+        h('span', { class: 'gg-pad-key' }, key.toUpperCase()));
       pad.addEventListener('pointerdown', (e) => { e.preventDefault(); this.hitLane(lane); });
       pad.addEventListener('pointerup', () => pad.classList.remove('on'));
       pad.addEventListener('pointerleave', () => pad.classList.remove('on'));
