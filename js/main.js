@@ -4,6 +4,7 @@
 import { LESSON_CATEGORIES } from './lessons.js';
 import { getPBStats } from './ghost.js';
 import { h, clear, resultsScreen } from './ui.js';
+import { drawMansfield } from './sprite.js';
 import { toggleMute, isMuted, resumeAudio, playCoin, Music } from './audio.js';
 import { FocusMode } from './modes/focus.js';
 import { ScrollerMode } from './modes/scroller.js';
@@ -84,6 +85,7 @@ function renderLanding() {
   const shell = h('div', { class: 'shell fade-in' },
     topbar(),
     h('header', { class: 'hero' },
+      mascot(),
       h('div', { class: 'monogram' }, 'M', h('span', { class: 't' }, 'T'), 'T'),
       h('div', { class: 'rule' }),
       h('div', { class: 'wordmark' }, 'mansfield teaches typing'),
@@ -157,6 +159,22 @@ function renderResults(modeKey, lesson, res) {
     onNext: nextLesson ? () => play(modeKey, nextLesson) : null,
     onMenu: () => renderLessonSelect(modeKey),
   });
+}
+
+/* ---- the landing mascot: Mansfield jogging in place ----------------------- */
+
+function mascot() {
+  const c = h('canvas', { class: 'mascot', width: 192, height: 192, 'aria-hidden': 'true' });
+  requestAnimationFrame(() => animateMascot(c));
+  return c;
+}
+function animateMascot(canvas) {
+  if (!canvas.isConnected) return; // landing was replaced — stop cleanly
+  const g = canvas.getContext('2d');
+  animateMascot._t = (animateMascot._t || 0) + 1;
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  drawMansfield(g, 32, 32, 128, 'run', animateMascot._t);
+  requestAnimationFrame(() => animateMascot(canvas));
 }
 
 /* ---- boot ----------------------------------------------------------------- */

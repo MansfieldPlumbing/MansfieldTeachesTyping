@@ -178,6 +178,20 @@ export class HeroMode {
     g.beginPath(); g.moveTo(0, fy); g.lineTo(w, fy); g.stroke();
     g.fillStyle = 'rgba(194,168,120,0.12)'; g.fillRect(0, fy, w, h - fy);
 
+    // lane target pads sitting on the fret
+    for (let l = 0; l < LANES; l++) {
+      const x = this.laneX(l);
+      g.fillStyle = 'rgba(194,168,120,0.10)';
+      this.roundRect(g, x - 22, fy - 5, 44, 10, 5); g.fill();
+    }
+
+    // beam from Mansfield up to the word he's locked onto
+    if (this.locked && !this.locked.cleared) {
+      const lx = this.laneX(this.locked.lane), ly = this.noteY(this.locked);
+      g.strokeStyle = 'rgba(194,168,120,0.35)'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(w / 2, fy - 40); g.lineTo(lx, ly + 16); g.stroke();
+    }
+
     // notes
     for (const n of this.notes) {
       if (n.cleared) continue;
