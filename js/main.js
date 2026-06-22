@@ -91,7 +91,8 @@ function renderLanding() {
     cards,
     h('footer', { class: 'foot' },
       h('span', {}, 'Mansfield Plumbing · built in the spirit of the 1992 original'),
-      h('span', {}, h('a', { href: 'https://github.com/MansfieldPlumbing/MansfieldTeachesTyping', target: '_blank', rel: 'noreferrer' }, 'github.com/MansfieldPlumbing'))),
+      h('span', {}, h('a', { href: 'https://github.com/MansfieldPlumbing/MansfieldTeachesTyping', target: '_blank', rel: 'noreferrer' }, 'github.com/MansfieldPlumbing')),
+      h('span', { style: 'opacity:.7' }, 'Music by ', h('a', { href: 'https://incompetech.com', target: '_blank', rel: 'noreferrer' }, 'Kevin MacLeod'), ' · CC BY 4.0')),
   );
   app.appendChild(shell);
 }
