@@ -9,7 +9,7 @@ name: Deploy to GitHub Pages
 # After that, every push here deploys automatically.
 on:
   push:
-    branches: [main, claude/jolly-euler-2hb8cz]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

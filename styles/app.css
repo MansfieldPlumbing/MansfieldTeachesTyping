@@ -273,7 +273,7 @@ a { color: inherit; }
 
 /* the playfield canvas wrapper */
 .field {
-  position: relative; flex: 1; min-height: 0;
+  position: relative; flex: 1 1 auto; min-height: 34vh;
   border-radius: var(--radius); overflow: hidden;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.42));
@@ -319,7 +319,7 @@ a { color: inherit; }
 }
 .kb-row { display: flex; gap: 7px; justify-content: center; }
 .key {
-  flex: 1 1 0; max-width: 64px; min-width: 0;
+  flex: 1 1 0; max-width: 54px; min-width: 0;
   aspect-ratio: 1 / 1; border-radius: 11px;
   display: grid; place-items: center;
   background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
@@ -354,6 +354,18 @@ a { color: inherit; }
 @keyframes ripple { 0% { opacity: .6; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.2); } }
 
 .kb-hint { text-align: center; font-size: .68rem; color: var(--faint); margin-top: 8px; letter-spacing: .04em; }
+
+/* short viewports: shrink the keyboard so the playfield keeps its room */
+@media (max-height: 860px) {
+  .key { max-width: 46px; border-radius: 9px; }
+  .kb { padding: 9px 8px; gap: 6px; } .kb-row { gap: 6px; }
+}
+@media (max-height: 680px) {
+  .key { max-width: 38px; border-radius: 8px; font-size: .72rem; }
+  .kb { padding: 7px 6px; gap: 5px; border-radius: 14px; } .kb-row { gap: 5px; }
+  .kb-hint { margin-top: 5px; }
+  .field { min-height: 30vh; }
+}
 
 /* tighten the keyboard on small screens so all keys fit comfortably */
 @media (max-width: 560px) {
