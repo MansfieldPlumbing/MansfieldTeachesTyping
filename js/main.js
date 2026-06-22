@@ -18,17 +18,17 @@ const MODES = {
     num: '01', title: 'Adventure', tone: 'green', cls: ScrollerMode,
     blurb: 'Run the pipe with Mansfield. Type each brick and clog to smash through — and race a ghost of your best.',
   },
+  guitar: {
+    num: '02', title: 'Guitar God', tone: 'blue', cls: GuitarMode, song: true,
+    blurb: 'A real 3D rhythm game. Notes fall a neon fretboard — hit the lane on the beat to keep the band playing; miss and the stem drops out. Real song, real stems.',
+  },
   hero: {
-    num: '02', title: 'Mansfield Hero', tone: 'blue', cls: HeroMode,
-    blurb: 'Words fall toward the fret. Type them before they leak. Every key plays a note, so good typing makes music.',
+    num: '03', title: 'Leak Drop', tone: 'green', cls: HeroMode,
+    blurb: 'Pure typing pressure: words leak down the pipes — type each one before it hits the floor. Clear a run and it rings out a tune.',
   },
   focus: {
-    num: '03', title: 'Focus', tone: '', cls: FocusMode,
+    num: '04', title: 'Focus', tone: '', cls: FocusMode,
     blurb: 'No game. Just the words, a live caret, and honest numbers. The grown-up, business-casual loop.',
-  },
-  guitar: {
-    num: '04', title: 'Guitar God', tone: 'blue', cls: GuitarMode, song: true,
-    blurb: 'A 3D neon fretboard. Hit the lane on the beat to keep the band playing — miss and the stem drops out. Real stems, real song.',
   },
 };
 
@@ -80,18 +80,19 @@ function renderLanding() {
   const cards = h('div', { class: 'cards' });
   for (const key of Object.keys(MODES)) {
     const m = MODES[key];
-    cards.appendChild(h('button', { class: 'card', 'data-tone': m.tone || false, onclick: () => { resumeAudio(); m.song ? playGuitar() : renderLessonSelect(key); } },
-      h('div', { class: 'num' }, m.num),
+    cards.appendChild(h('button', { class: 'card', type: 'button', 'data-tone': m.tone || false, onclick: () => { resumeAudio(); m.song ? playGuitar() : renderLessonSelect(key); } },
+      h('div', { class: 'num', 'aria-hidden': 'true' }, m.num),
       h('h2', {}, m.title),
       h('p', {}, m.blurb),
-      h('div', { class: 'go' }, 'Open ', h('span', { class: 'arrow' }, '→'))));
+      h('div', { class: 'go', 'aria-hidden': 'true' }, 'Open ', h('span', { class: 'arrow' }, '→'))));
   }
 
-  const shell = h('div', { class: 'shell fade-in' },
+  const shell = h('div', { class: 'shell landing fade-in' },
     topbar(),
+    h('h1', { class: 'sr-only' }, 'Mansfield Teaches Typing'),
     h('header', { class: 'hero' },
       mascot(),
-      h('div', { class: 'monogram' }, 'M', h('span', { class: 't' }, 'T'), 'T'),
+      h('div', { class: 'monogram', 'aria-hidden': 'true' }, 'M', h('span', { class: 't' }, 'T'), 'T'),
       h('div', { class: 'rule' }),
       h('div', { class: 'wordmark' }, 'mansfield teaches typing'),
       h('div', { class: 'tagline' }, 'A love letter to Mario Teaches Typing. Help Mansfield fix the pipes — one key at a time.')),
@@ -216,4 +217,8 @@ function renderGuitarResults(res) {
 
 initTheme();
 renderLanding();
-window.addEventListener('keydown', (e) => { if (e.key === 'Tab') e.preventDefault(); }, { passive: false });
+
+// installable PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}

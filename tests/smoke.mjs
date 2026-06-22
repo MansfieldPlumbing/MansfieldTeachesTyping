@@ -44,7 +44,7 @@ try {
   stage = 'hero';
   await page.click('.btn-back');
   await page.waitForSelector('.cards .card', { timeout: 5000 });
-  await page.click('.cards .card:nth-child(2)');
+  await page.click('.cards .card:nth-child(3)');
   await page.waitForSelector('.lesson', { timeout: 5000 });
   await page.click('.lesson:nth-child(1)');
   await page.waitForSelector('.stage canvas', { timeout: 5000 });
@@ -56,7 +56,7 @@ try {
   // --- Focus, type a whole short lesson is too long; just verify it mounts ---
   stage = 'focus';
   await page.click('.btn-back');
-  await page.click('.cards .card:nth-child(3)');
+  await page.click('.cards .card:nth-child(4)');
   await page.waitForSelector('.lesson', { timeout: 5000 });
   await page.click('.lesson:nth-child(1)');
   await page.waitForSelector('.focus-text', { timeout: 5000 });
