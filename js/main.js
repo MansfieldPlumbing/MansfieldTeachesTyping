@@ -9,6 +9,7 @@ import { toggleMute, isMuted, resumeAudio, playCoin, Music } from './audio.js';
 import { FocusMode } from './modes/focus.js';
 import { ScrollerMode } from './modes/scroller.js';
 import { HeroMode } from './modes/hero.js';
+import { GuitarMode } from './modes/guitar.js';
 
 const app = document.getElementById('app');
 
@@ -24,6 +25,10 @@ const MODES = {
   focus: {
     num: '03', title: 'Focus', tone: '', cls: FocusMode,
     blurb: 'No game. Just the words, a live caret, and honest numbers. The grown-up, business-casual loop.',
+  },
+  guitar: {
+    num: '04', title: 'Guitar God', tone: 'blue', cls: GuitarMode, song: true,
+    blurb: 'A 3D neon fretboard. Hit the lane on the beat to keep the band playing — miss and the stem drops out. Real stems, real song.',
   },
 };
 
@@ -75,7 +80,7 @@ function renderLanding() {
   const cards = h('div', { class: 'cards' });
   for (const key of Object.keys(MODES)) {
     const m = MODES[key];
-    cards.appendChild(h('button', { class: 'card', 'data-tone': m.tone || false, onclick: () => { resumeAudio(); renderLessonSelect(key); } },
+    cards.appendChild(h('button', { class: 'card', 'data-tone': m.tone || false, onclick: () => { resumeAudio(); m.song ? playGuitar() : renderLessonSelect(key); } },
       h('div', { class: 'num' }, m.num),
       h('h2', {}, m.title),
       h('p', {}, m.blurb),
@@ -175,6 +180,36 @@ function animateMascot(canvas) {
   g.clearRect(0, 0, canvas.width, canvas.height);
   drawMansfield(g, 32, 32, 128, 'run', animateMascot._t);
   requestAnimationFrame(() => animateMascot(canvas));
+}
+
+function playGuitar(difficulty = 'medium') {
+  resumeAudio();
+  Music.pause(); // the stems ARE the music here
+  clear(app);
+  if (current) { current.destroy(); current = null; }
+  current = new GuitarMode(app, {
+    difficulty,
+    onExit: () => { current = null; renderLanding(); },
+    onFinish: (res) => { current = null; renderGuitarResults(res); },
+  });
+  current.start();
+}
+
+function renderGuitarResults(res) {
+  clear(app);
+  const cell = (k, v) => h('div', { class: 'cell' }, h('span', { class: 'k' }, k), h('span', { class: 'v' }, String(v)));
+  const shell = h('div', { class: 'shell' }, topbar(),
+    h('div', { class: 'results fade-in' },
+      h('div', { class: 'seal' }, '🎸'),
+      h('h3', { class: 'verdict' }, 'Set Complete'),
+      h('p', { class: 'blurb' }, `You scored ${res.score.toLocaleString()} with a ${res.snap.maxStreak}-note streak at ${res.snap.accuracy}% accuracy. Encore?`),
+      h('div', { class: 'result-grid' },
+        cell('Score', res.score.toLocaleString()), cell('Max combo', res.snap.maxStreak),
+        cell('Accuracy', res.snap.accuracy + '%'), cell('Notes hit', res.snap.correct)),
+      h('div', { class: 'result-actions' },
+        h('button', { class: 'btn', onclick: () => playGuitar() }, '↻ Encore'),
+        h('button', { class: 'btn primary', onclick: () => renderLanding() }, 'Menu'))));
+  app.appendChild(shell);
 }
 
 /* ---- boot ----------------------------------------------------------------- */
