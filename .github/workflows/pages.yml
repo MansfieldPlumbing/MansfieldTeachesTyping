@@ -30,6 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Trim non-site files from the Pages artifact
+        run: rm -f *.zip   # AI Studio source zips aren't needed on the live site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: '.'

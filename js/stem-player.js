@@ -61,10 +61,10 @@ export class StemPlayer {
   analyzeNotes(difficulty = 'medium') {
     if (this.buffers.length < 2) return [];
     const cfg = ({
-      easy: { mult: 1.5, gap: 0.85 },
-      medium: { mult: 1.0, gap: 0.42 },
-      hard: { mult: 0.6, gap: 0.26 },
-    })[difficulty] || { mult: 1.0, gap: 0.42 };
+      easy: { mult: 1.9, gap: 1.0 },
+      medium: { mult: 1.2, gap: 0.6 },
+      hard: { mult: 0.7, gap: 0.34 },
+    })[difficulty] || { mult: 1.9, gap: 1.0 };
 
     const detect = (buf, threshold) => {
       const data = buf.getChannelData(0);
