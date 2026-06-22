@@ -119,7 +119,7 @@ export class ScrollerMode {
 
   spawnBreak(a) {
     const x = this.fixedX + (a.d - this.displayDist);
-    const y = this.groundY - 64;
+    const y = this.groundY - (this.sprite || 64);
     const col = a.kind === 'brick' ? '#c08a5a' : '#3fae6b';
     for (let i = 0; i < 10; i++) {
       this.particles.push({
@@ -135,8 +135,9 @@ export class ScrollerMode {
     if (this._dead) return;
     const g = this.g, w = this.w, h = this.h, now = performance.now();
     this.tick++;
-    this.fixedX = Math.max(96, w * 0.2);
-    this.groundY = h - 78;
+    this.sprite = Math.round(Math.max(40, Math.min(76, h * 0.34)));
+    this.fixedX = Math.max(70, w * 0.18);
+    this.groundY = h - Math.round(Math.max(22, Math.min(70, h * 0.2)));
 
     // camera lerps toward Mansfield's slot distance for buttery dashes
     const targetDist = this.cleared * SLOT;
@@ -165,7 +166,7 @@ export class ScrollerMode {
         const p = gh.ghost.progressAt(elapsed);
         const gx = this.fixedX + (p * this.totalDist - this.displayDist);
         if (gx < -80 || gx > w + 80) { this.drawGhostTag(g, gh, gx, w); continue; }
-        drawMansfield(g, gx - 32, this.groundY - 64, 64, 'run', this.tick + 13, { alpha: 0.32, tint: gh.tint });
+        drawMansfield(g, gx - this.sprite / 2, this.groundY - this.sprite, this.sprite, 'run', this.tick + 13, { alpha: 0.32, tint: gh.tint });
         this.drawGhostTag(g, gh, gx, w);
       }
     }
@@ -177,8 +178,9 @@ export class ScrollerMode {
     let state = 'run';
     if (now < this.hurtUntil) state = 'hurt';
     else if (now < this.jumpUntil) state = 'jump';
-    const my = this.groundY - 64 - (state === 'jump' ? 16 : 0);
-    drawMansfield(g, this.fixedX - 32, my, 64, state, this.tick);
+    const sz = this.sprite;
+    const my = this.groundY - sz - (state === 'jump' ? sz * 0.28 : 0);
+    drawMansfield(g, this.fixedX - sz / 2, my, sz, state, this.tick);
 
     g.restore();
 
@@ -205,7 +207,7 @@ export class ScrollerMode {
     g.restore();
 
     // ground bricks
-    const gy = h - 78;
+    const gy = this.groundY;
     g.fillStyle = '#1b1410';
     g.fillRect(0, gy, w, h - gy);
     const bw = 56, bh = 26, off = cam % bw;
@@ -221,29 +223,31 @@ export class ScrollerMode {
   }
 
   drawObstacle(g, t, x, active) {
-    const y = this.groundY - 64;
+    const s = this.sprite, y = this.groundY - s, half = s / 2;
     if (t.kind === 'brick') {
       // question/brick block
       g.fillStyle = active ? '#d8a25f' : '#9a6f43';
       g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 2;
-      this.roundRect(g, x - 28, y, 56, 56, 8); g.fill(); g.stroke();
+      this.roundRect(g, x - half, y, s, s, s * 0.14); g.fill(); g.stroke();
       g.fillStyle = 'rgba(255,255,255,0.18)';
-      g.fillRect(x - 22, y + 6, 44, 6);
+      g.fillRect(x - half * 0.78, y + s * 0.1, s * 0.78, s * 0.1);
     } else {
       // clog creature: a green pipe-blob with eyes
       g.fillStyle = active ? '#46c277' : '#2f8a54';
       g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 2;
-      this.roundRect(g, x - 30, y + 4, 60, 52, 16); g.fill(); g.stroke();
+      this.roundRect(g, x - half, y + s * 0.07, s, s * 0.9, s * 0.28); g.fill(); g.stroke();
+      const ey = y + s * 0.4, er = s * 0.12;
       g.fillStyle = '#fff';
-      g.beginPath(); g.arc(x - 10, y + 24, 7, 0, 7); g.arc(x + 12, y + 24, 7, 0, 7); g.fill();
+      g.beginPath(); g.arc(x - s * 0.16, ey, er, 0, 7); g.arc(x + s * 0.2, ey, er, 0, 7); g.fill();
       g.fillStyle = '#111';
-      g.beginPath(); g.arc(x - 8, y + 25, 3, 0, 7); g.arc(x + 14, y + 25, 3, 0, 7); g.fill();
+      g.beginPath(); g.arc(x - s * 0.13, ey + 1, er * 0.45, 0, 7); g.arc(x + s * 0.23, ey + 1, er * 0.45, 0, 7); g.fill();
     }
-    this.drawLabel(g, t, x, y - 14, active);
+    this.drawLabel(g, t, x, y - 12, active);
   }
 
   drawLabel(g, t, x, y, active) {
-    g.font = '600 22px ui-monospace, monospace';
+    const fs = Math.max(14, Math.round(this.sprite * 0.34));
+    g.font = '600 ' + fs + 'px ui-monospace, monospace';
     g.textAlign = 'center'; g.textBaseline = 'bottom';
     const text = t.text;
     if (!active) {
@@ -263,7 +267,7 @@ export class ScrollerMode {
       else if (i === typed) {
         // highlight box
         g.fillStyle = '#c2a878';
-        g.fillRect(cx - 1, y - 22, cw + 2, 26);
+        g.fillRect(cx - 1, y - fs, cw + 2, fs + 4);
         g.fillStyle = '#15151c';
       } else g.fillStyle = '#ece9e2';
       g.fillText(ch, cx, y);
@@ -277,7 +281,7 @@ export class ScrollerMode {
     g.textAlign = 'center'; g.textBaseline = 'bottom';
     g.fillStyle = gh.tint;
     g.globalAlpha = 0.8;
-    g.fillText(gh.name + (x > w ? ' ▶' : x < 0 ? '◀ ' : ''), cx, this.groundY - 66);
+    g.fillText(gh.name + (x > w ? ' ▶' : x < 0 ? '◀ ' : ''), cx, this.groundY - this.sprite - 3);
     g.globalAlpha = 1;
   }
 
