@@ -1,17 +1,17 @@
-/* Key Rain — the MTT home-row drill, reborn with the Guitar God look.
-   The real lesson text (fff jjj fjfj ghgj …) rains down as glowing letters,
-   each in the column directly above its actual key on the acrylic keyboard.
-   Press the key (physical keyboard) as the letter lands on it. Desktop-first;
-   the on-screen keyboard is the teaching aid and a touch fallback. */
+/* Key Rain — the MTT home-row drills fall as little groups (ff, dd, fgf, jhj,
+   sll …) down a rain-streaked glass pane. Type the lowest group's letters in
+   order; the acrylic keyboard lights the key + finger you need. Groups get
+   longer/harder as the lesson goes. Desktop-first; physical keyboard.  */
 
 import { mountStage } from '../ui.js';
 import { Keyboard } from '../keyboard.js';
 import { Metrics, buildTargets, didPass } from '../engine.js';
 import { fingerFor } from '../finger.js';
-import { KIND_WORDS, pick } from '../lessons.js';
+import { RainGlass } from '../rainglass.js';
 import { playNote, playStrum, playClank, playWinTheme, resumeAudio } from '../audio.js';
 
-const MAX_CONCURRENT = 4;
+const LANES = 6;
+const MAX_CONCURRENT = 3;
 
 export class HeroMode {
   constructor(host, { lesson, onFinish, onExit }) {
@@ -25,28 +25,34 @@ export class HeroMode {
     ui.stage.classList.add('rain');
     ui.setGoal(this.lesson.minWpm);
 
+    // rain-on-glass backdrop, behind the falling groups
+    this.glassCanvas = document.createElement('canvas');
+    this.glassCanvas.className = 'rain-glass';
+    ui.field.appendChild(this.glassCanvas);
+    this.glass = new RainGlass(this.glassCanvas);
+
     this.layer = document.createElement('div');
     this.layer.className = 'rain-layer';
     ui.field.appendChild(this.layer);
 
     this.kb = new Keyboard(ui.kbMount, { onKey: (c) => this.press(c) });
 
-    this.queue = buildTargets(this.lesson, 'char'); // ['f','f','d','d',...]
+    this.queue = buildTargets(this.lesson, 'word'); // groups: ff, dd, fgf, jhj, words…
     this.total = this.queue.length;
 
     this.metrics = new Metrics();
-    this.letters = [];
+    this.notes = [];
     this.resolved = 0;
     this.noteIndex = 0;
-    this.started = null;
     this.lastSpawn = 0;
-    // pace + fall time scale with the lesson's target speed
-    this.spawnEvery = Math.max(560, 1500 - this.lesson.minWpm * 18);
-    this.fallMs = Math.max(2000, 4200 - this.lesson.minWpm * 34);
+    this.started = null;
+    this.laneCursor = 0;
+    this.spawnEvery = Math.max(720, 1800 - this.lesson.minWpm * 16);
+    this.fallMs = Math.max(2600, 5400 - this.lesson.minWpm * 40);
 
-    this._resize = () => this.measure();
+    this._resize = () => { this.glass.resize(); this.measure(); };
     window.addEventListener('resize', this._resize);
-    this._ro = new ResizeObserver(() => this.measure());
+    this._ro = new ResizeObserver(() => this._resize());
     this._ro.observe(ui.field);
 
     this._onKey = (e) => {
@@ -55,7 +61,6 @@ export class HeroMode {
     };
     window.addEventListener('keydown', this._onKey);
 
-    // let the keyboard lay out before we measure key positions, then start raining
     requestAnimationFrame(() => {
       this.measure();
       this.started = performance.now();
@@ -64,93 +69,102 @@ export class HeroMode {
     });
   }
 
-  /** refresh each falling letter's target key position (also on resize) */
   measure() {
-    for (const n of this.letters) {
-      const r = this.kb.keyRect(n.ch, this.ui.field);
-      if (r) { n.x = r.x; n.targetY = r.y; n.kh = r.h; n.el.style.left = r.x + 'px'; }
-    }
+    this.strikeY = this.kb.topY(this.ui.field) - 6;
+    for (const n of this.notes) { n.x = this.laneX(n.lane); n.el.style.left = n.x + 'px'; }
+  }
+
+  laneX(lane) {
+    const W = this.ui.field.clientWidth;
+    const m = Math.min(80, W * 0.08);
+    return m + (lane + 0.5) * ((W - 2 * m) / LANES);
   }
 
   colorFor(ch) { return fingerFor(ch).hand === 'left' ? 'var(--pipe-green)' : 'var(--pipe-blue)'; }
 
   spawn() {
-    const ch = this.queue.shift();
-    const r = this.kb.keyRect(ch, this.ui.field);
-    if (!r) return; // key not on our board (rare) — skip
+    const text = this.queue.shift();
+    const lane = this.laneCursor % LANES; this.laneCursor++;
+    const x = this.laneX(lane);
     const el = document.createElement('div');
     el.className = 'rain-note';
-    el.textContent = ch === ' ' ? '␣' : ch;
-    el.style.left = r.x + 'px';
-    el.style.setProperty('--c', this.colorFor(ch));
+    el.style.left = x + 'px';
+    const note = { text, typed: 0, lane, x, el, spawnT: performance.now(), cleared: false };
+    this.render(note);
     this.layer.appendChild(el);
-    this.letters.push({ ch, el, x: r.x, targetY: r.y, kh: r.h, spawnT: performance.now(), hit: false });
+    this.notes.push(note);
   }
 
-  yFor(n, now) { return Math.min(1.18, (now - n.spawnT) / this.fallMs) * n.targetY; }
-
-  press(rawCh) {
-    if (this._done) return;
-    const ch = rawCh.length === 1 ? rawCh : '';
-    // the lowest (closest to its key) un-hit letter matching this key
-    let best = null, bestY = -1;
-    const now = performance.now();
-    for (const n of this.letters) {
-      if (n.hit || n.ch !== ch) continue;
-      const y = this.yFor(n, now);
-      if (y > bestY) { best = n; bestY = y; }
+  render(n) {
+    let html = '';
+    for (let i = 0; i < n.text.length; i++) {
+      const ch = n.text[i] === ' ' ? '␣' : n.text[i];
+      if (i < n.typed) html += `<span class="done">${ch}</span>`;
+      else if (i === n.typed) html += `<span class="cur" style="--c:${this.colorFor(n.text[i])}">${ch}</span>`;
+      else html += `<span>${ch}</span>`;
     }
-    if (best) this.hit(best);
-    else { this.metrics.miss(); playClank(); }
+    n.el.innerHTML = html;
   }
 
-  hit(n) {
-    n.hit = true;
-    this.metrics.hit();
-    this.resolved++;
-    this.kb.press(n.ch);
-    playNote(this.noteIndex++);
-    n.el.classList.add('pop');
-    setTimeout(() => n.el.remove(), 200);
+  yFor(n, now) { return Math.min(1.12, (now - n.spawnT) / this.fallMs) * this.strikeY; }
+
+  activeNote() {
+    let best = null, by = -1;
+    const now = performance.now();
+    for (const n of this.notes) { if (n.cleared) continue; const y = this.yFor(n, now); if (y > by) { best = n; by = y; } }
+    return best;
+  }
+
+  press(raw) {
+    if (this._done) return;
+    const ch = raw.length === 1 ? raw : '';
+    const n = this.activeNote();
+    if (!n) { this.metrics.miss(); playClank(); return; }
+    if (ch === n.text[n.typed]) {
+      this.metrics.hit(); this.kb.press(ch); playNote(this.noteIndex++);
+      n.typed++;
+      if (n.typed >= n.text.length) this.clearNote(n); else this.render(n);
+    } else {
+      this.metrics.miss(); playClank();
+      n.el.classList.add('shake'); setTimeout(() => n.el.classList.remove('shake'), 200);
+    }
+  }
+
+  clearNote(n) {
+    n.cleared = true; this.resolved++;
+    n.el.classList.add('pop'); setTimeout(() => n.el.remove(), 200);
     const s = this.metrics.streak;
     if (s > 0 && s % 10 === 0) playStrum(Math.min(11, s / 10));
     this.checkDone();
   }
 
   leak(n) {
-    n.hit = true;
-    this.resolved++;
-    this.metrics.miss();
-    n.el.classList.add('leak');
-    setTimeout(() => n.el.remove(), 220);
+    n.cleared = true; this.resolved++; this.metrics.miss();
+    n.el.classList.add('leak'); setTimeout(() => n.el.remove(), 220);
     this.checkDone();
   }
 
-  checkDone() {
-    if (!this.queue.length && this.resolved >= this.total) this.win();
-  }
+  checkDone() { if (!this.queue.length && this.resolved >= this.total) this.win(); }
 
   loop() {
     if (this._dead) return;
     const now = performance.now();
+    this.glass.frame();
 
-    const active = this.letters.filter((n) => !n.hit).length;
+    const active = this.notes.filter((n) => !n.cleared).length;
     if (this.started != null && this.queue.length && active < MAX_CONCURRENT && now - this.lastSpawn > this.spawnEvery) {
       this.spawn(); this.lastSpawn = now;
     }
 
-    let urgent = null, uy = -1;
-    for (const n of this.letters) {
-      if (n.hit) continue;
+    const act = this.activeNote();
+    for (const n of this.notes) {
+      if (n.cleared) continue;
       const y = this.yFor(n, now);
       n.el.style.transform = `translate(-50%, ${y}px)`;
-      const prox = Math.max(0, 1 - Math.abs(n.targetY - y) / 130);
-      n.el.style.setProperty('--glow', (0.35 + prox * 0.65).toFixed(2));
-      if (y >= n.targetY + n.kh * 0.5) { this.leak(n); continue; }
-      if (y > uy) { urgent = n; uy = y; }
+      n.el.classList.toggle('active', n === act);
+      if (y >= this.strikeY + 4) this.leak(n);
     }
-    // teaching aid: light the most urgent key + finger
-    this.kb.setNext(urgent ? urgent.ch : null);
+    this.kb.setNext(act ? act.text[act.typed] : null);
 
     this.ui.update(this.metrics.snapshot(), this.metrics.elapsedMs());
     this._raf = requestAnimationFrame(() => this.loop());

@@ -9,7 +9,7 @@
 
 const STEM_NAMES = ['backing', 'guitar'];
 const GUITAR_IDX = 1;
-export const LANE_COLORS = ['#22c55e', '#ef4444', '#eab308', '#3b82f6', '#f97316'];
+export const LANE_COLORS = ['#22c55e', '#84cc16', '#eab308', '#f59e0b', '#f97316', '#ef4444', '#ec4899', '#a855f7', '#3b82f6', '#06b6d4'];
 export const HIT_WINDOW = 0.2;
 export const COUNTDOWN = 3.0;
 
@@ -95,8 +95,8 @@ export class StemPlayer {
     let lane = 0, last = -9;
     for (const o of all) {
       if (o.t - last < cfg.gap) continue; // keep it playable
-      // guitar notes lean to the middle lanes, backing to the outer ones
-      const l = o.src === 1 ? (lane % 3) + 1 : (lane % 2 === 0 ? 0 : 4);
+      // spread across all 10 strings; guitar leans to the inner frets
+      const l = o.src === 1 ? 2 + (lane % 6) : (lane % 2 ? lane % 10 : (lane * 3) % 10);
       notes.push({ time: o.t, lane: l, id: 'n' + notes.length, hit: false, missed: false });
       lane++; last = o.t;
     }

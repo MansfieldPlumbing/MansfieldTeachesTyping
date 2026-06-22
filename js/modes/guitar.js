@@ -9,8 +9,8 @@ import { drawMansfield } from '../sprite.js';
 import { h, clear } from '../ui.js';
 import { resumeAudio } from '../audio.js';
 
-const LANES = 5, LANE_W = 1, START_X = -(LANES * LANE_W) / 2 + LANE_W / 2, TARGET_Z = 5;
-const KEYS = ['a', 's', 'd', 'f', 'g'];
+const LANES = 10, LANE_W = 0.92, START_X = -(LANES * LANE_W) / 2 + LANE_W / 2, TARGET_Z = 5;
+const KEYS = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';'];
 const SPEEDS = { easy: 7, medium: 10, hard: 14 };
 
 export class GuitarMode {
@@ -88,7 +88,7 @@ export class GuitarMode {
     scene.background = new THREE.Color('#050510');
     scene.fog = new THREE.Fog('#050510', 18, 55);
 
-    this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+    this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 200);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.4));
     const key = new THREE.PointLight(0xffffff, 1.0); key.position.set(0, 6, TARGET_Z + 3); scene.add(key);
@@ -186,8 +186,9 @@ export class GuitarMode {
     const w = this.stage.clientWidth, ht = this.stage.clientHeight;
     this.renderer.setSize(w, ht, false);
     const aspect = w / ht; this.camera.aspect = aspect;
-    if (aspect < 1.0) { this.camera.position.set(0, 6.5, TARGET_Z + 5.5); this.camera.lookAt(0, 1.5, TARGET_Z - 10); }
-    else { this.camera.position.set(0, 4.2, TARGET_Z + 4.2); this.camera.lookAt(0, 0, TARGET_Z - 10); }
+    // wider board (10 strings) needs the camera pulled back
+    if (aspect < 1.0) { this.camera.position.set(0, 8, TARGET_Z + 8); this.camera.lookAt(0, 1.5, TARGET_Z - 9); }
+    else { this.camera.position.set(0, 5.4, TARGET_Z + 6.8); this.camera.lookAt(0, 0, TARGET_Z - 9); }
     this.camera.updateProjectionMatrix();
   }
 
