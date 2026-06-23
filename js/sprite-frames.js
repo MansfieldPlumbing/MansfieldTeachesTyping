@@ -8,6 +8,9 @@
      row4 CLIMB+ATTACK   row5 POWERUP   row6 DEATH+VICTORY */
 
 export const SHEET_SRC = 'assets/sprites/mansfield.png';
+// black silhouette of the same sheet — placeholder ghost-racer until evil
+// Shadow Marcio is keyed in. Identical frame geometry.
+export const SHADOW_SRC = 'assets/sprites/mansfield-shadow.png';
 
 const R0 = [[126,10,53,97],[225,10,53,97],[326,10,52,97],[426,10,53,97]];
 const R1 = [[126,120,57,95],[226,120,59,96],[330,120,51,95],[429,120,55,97],[527,118,56,97],[622,118,63,93],[730,118,51,99],[827,118,57,97],[925,118,60,99],[1030,118,54,97],[1127,118,59,94]];

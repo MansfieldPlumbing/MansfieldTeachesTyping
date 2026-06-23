@@ -151,7 +151,7 @@ export class ScrollerMode {
       for (const gh of this.ghosts) {
         const p = gh.ghost.progressAt(elapsed);
         const gx = this.fixedX + (p * this.totalDist - this.displayDist);
-        if (gx > -70 && gx < w + 70) drawMansfield(g, gx - this.sprite / 2, this.groundY - this.sprite, this.sprite, 'run', this.tick + 13, { alpha: 0.3, tint: gh.tint });
+        if (gx > -70 && gx < w + 70) drawMansfield(g, gx - this.sprite / 2, this.groundY - this.sprite, this.sprite, 'run', this.tick + 13, { alpha: 0.42, shadow: true });
         this.drawGhostTag(g, gh, gx, w);
       }
     }
