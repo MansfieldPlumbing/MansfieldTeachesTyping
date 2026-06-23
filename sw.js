@@ -5,7 +5,7 @@
    expensive to refetch. A `skipWaiting` message + the force-update link in the
    app let the user blow the whole cache away on demand. */
 
-const VERSION = 'mtt-v3';
+const VERSION = 'mtt-v4';
 const SHELL = [
   '.', 'index.html', 'manifest.webmanifest',
   'styles/app.css',
@@ -13,7 +13,7 @@ const SHELL = [
   'js/keyboard.js', 'js/sprite.js', 'js/sprite-frames.js', 'js/engine.js', 'js/ghost.js', 'js/stem-player.js',
   'js/modes/focus.js', 'js/modes/scroller.js', 'js/modes/hero.js', 'js/modes/guitar.js',
   'vendor/three.module.min.js',
-  'assets/sprites/mansfield.png',
+  'assets/sprites/mansfield.png', 'assets/sprites/mansfield-shadow.png',
   'assets/icons/icon-192.png', 'assets/icons/icon-512.png',
 ];
 

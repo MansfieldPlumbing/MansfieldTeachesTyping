@@ -115,12 +115,17 @@ const HURT = [
 const FRAMES = { idle: [IDLE], run: [IDLE, RUN1, RUN2], jump: [JUMP], hurt: [HURT] };
 
 /* ---- real sprite sheet (preferred when loaded) ---------------------------- */
-import { SHEET_SRC, FRAMES as SHEET_FRAMES } from './sprite-frames.js';
+import { SHEET_SRC, SHADOW_SRC, FRAMES as SHEET_FRAMES } from './sprite-frames.js';
 
 const sheet = new Image();
 let sheetReady = false;
 sheet.onload = () => { sheetReady = true; };
 sheet.src = SHEET_SRC;
+
+const shadow = new Image();
+let shadowReady = false;
+shadow.onload = () => { shadowReady = true; };
+shadow.src = SHADOW_SRC;
 
 // how tall Mansfield stands relative to the caller's `size` box (feet at y+size)
 const SHEET_SCALE = 1.22;
@@ -132,17 +137,13 @@ function drawSheet(g, x, y, size, state, frameTick, opts) {
   const destW = destH * (sw / sh);
   let dx = x + size / 2 - destW / 2;
   const dy = y + size - destH; // plant the feet on the box's baseline
+  // ghosts draw as the black silhouette sheet (the shadow racer)
+  const src = (opts.shadow && shadowReady) ? shadow : sheet;
   g.save();
   if (opts.alpha != null) g.globalAlpha = opts.alpha;
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
   if (opts.flip) { g.translate(dx + destW, dy); g.scale(-1, 1); dx = 0; }
-  g.drawImage(sheet, sx, sy, sw, sh, opts.flip ? 0 : dx, dy, destW, destH);
-  if (opts.tint) { // ghost wash — colourise the silhouette in place
-    g.globalCompositeOperation = 'source-atop';
-    g.globalAlpha = (opts.alpha != null ? opts.alpha : 1) * 0.85;
-    g.fillStyle = opts.tint;
-    g.fillRect(opts.flip ? 0 : dx, dy, destW, destH);
-  }
+  g.drawImage(src, sx, sy, sw, sh, opts.flip ? 0 : dx, dy, destW, destH);
   g.restore();
 }
 
