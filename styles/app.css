@@ -310,9 +310,9 @@ a { color: inherit; }
 
 .kb {
   margin-top: 12px; padding: 12px 10px;
-  background: rgba(16,18,26,.30); border: 1px solid var(--glass-line); border-radius: 18px;
-  backdrop-filter: blur(34px) saturate(190%) brightness(1.12); -webkit-backdrop-filter: blur(34px) saturate(190%) brightness(1.12);
-  box-shadow: var(--shadow), inset 0 1px 0 var(--glass-hi);
+  background: rgba(26,38,52,.14); border: 1px solid rgba(200,228,240,.16); border-radius: 18px;
+  backdrop-filter: blur(22px) saturate(210%) brightness(1.22); -webkit-backdrop-filter: blur(22px) saturate(210%) brightness(1.22);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 50px rgba(120,170,190,.06);
   user-select: none; -webkit-user-select: none;
   display: flex; flex-direction: column; gap: 7px;
   touch-action: manipulation;
@@ -377,14 +377,18 @@ a { color: inherit; }
   .hud .stat .v { font-size: .98rem; }
 }
 
-/* finger guide pill */
+/* finger guide pill — a small glass chip, not a banal line of text */
 .finger {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono); font-size: .68rem; color: var(--muted);
+  font-family: var(--font-mono); font-size: .6rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(255,255,255,.05); border: 1px solid var(--glass-line);
+  padding: 4px 13px; border-radius: 999px;
+  backdrop-filter: blur(10px) saturate(160%); -webkit-backdrop-filter: blur(10px) saturate(160%);
 }
-.finger .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--brass); }
-.finger .dot.left  { background: var(--pipe-green); }
-.finger .dot.right { background: var(--pipe-blue); }
+.finger .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brass); box-shadow: 0 0 9px var(--brass); }
+.finger .dot.left  { background: var(--pipe-green); box-shadow: 0 0 9px var(--pipe-green); }
+.finger .dot.right { background: var(--pipe-blue); box-shadow: 0 0 9px var(--pipe-blue); }
 
 /* ===========================================================================
    FOCUS MODE — the grown-up. No game. Just text, a caret, and honest numbers.
