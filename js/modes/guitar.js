@@ -9,8 +9,8 @@ import { drawMansfield } from '../sprite.js';
 import { h, clear } from '../ui.js';
 import { resumeAudio } from '../audio.js';
 
-const LANES = 10, LANE_W = 0.92, START_X = -(LANES * LANE_W) / 2 + LANE_W / 2, TARGET_Z = 5;
-const KEYS = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';'];
+const LANES = 5, LANE_W = 1.12, START_X = -(LANES * LANE_W) / 2 + LANE_W / 2, TARGET_Z = 5;
+const KEYS = ['d', 'f', 'g', 'h', 'j'];
 const SPEEDS = { easy: 7, medium: 10, hard: 14 };
 
 export class GuitarMode {
@@ -186,9 +186,9 @@ export class GuitarMode {
     const w = this.stage.clientWidth, ht = this.stage.clientHeight;
     this.renderer.setSize(w, ht, false);
     const aspect = w / ht; this.camera.aspect = aspect;
-    // wider board (10 strings) needs the camera pulled back
-    if (aspect < 1.0) { this.camera.position.set(0, 8, TARGET_Z + 8); this.camera.lookAt(0, 1.5, TARGET_Z - 9); }
-    else { this.camera.position.set(0, 5.4, TARGET_Z + 6.8); this.camera.lookAt(0, 0, TARGET_Z - 9); }
+    // 5-string board sits closer; frame the neck + the band behind it
+    if (aspect < 1.0) { this.camera.position.set(0, 6.4, TARGET_Z + 6.6); this.camera.lookAt(0, 1.4, TARGET_Z - 9); }
+    else { this.camera.position.set(0, 4.6, TARGET_Z + 5.6); this.camera.lookAt(0, 0.6, TARGET_Z - 9); }
     this.camera.updateProjectionMatrix();
   }
 
