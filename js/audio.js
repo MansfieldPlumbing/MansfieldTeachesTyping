@@ -7,6 +7,9 @@
 let ctx = null;
 let muted = false;
 
+import { Chiptune } from './chiptune.js';
+export const bg = new Chiptune();
+
 function ac() {
   if (typeof window === 'undefined') return null;
   if (!ctx) {
@@ -19,7 +22,7 @@ export function resumeAudio() {
   const c = ac();
   if (c && c.state === 'suspended') c.resume().catch(() => {});
 }
-export function toggleMute() { muted = !muted; Music.setMuted(muted); return muted; }
+export function toggleMute() { muted = !muted; Music.setMuted(muted); bg.setMuted(muted); return muted; }
 export function isMuted() { return muted; }
 
 function tone({ type = 'square', from, to, t0 = 0, dur = 0.1, gain = 0.1, glide = 'exp' }) {
