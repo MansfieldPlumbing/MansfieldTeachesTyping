@@ -75,22 +75,22 @@ const RUN2 = [
 ];
 
 const JUMP = [
-  [0,0,0,0,0,0,3,3,3,3,3,0,0,0,0,0],
-  [0,0,0,0,0,3,3,3,3,3,3,3,0,0,0,0],
-  [0,0,0,0,0,5,5,4,6,4,4,5,0,0,0,0],
-  [0,0,0,0,5,5,5,4,4,4,4,5,5,0,0,0],
-  [0,0,0,5,5,5,5,4,4,4,4,5,5,5,0,0],
-  [0,0,3,3,5,5,4,4,4,4,4,4,5,3,3,0],
-  [0,3,3,3,0,4,4,4,4,4,4,4,0,3,3,3],
-  [0,3,3,0,0,4,4,4,4,4,4,4,0,0,3,3],
-  [0,0,0,0,4,4,4,4,0,4,4,4,4,0,0,0],
-  [0,0,0,2,2,2,2,0,0,0,2,2,2,2,0,0],
-  [0,0,2,2,2,2,2,0,0,0,2,2,2,2,2,0],
-  [0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0],
-  [0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0],
-  [0,0,0,0,0,2,2,2,3,3,2,3,0,0,0,0],
-  [0,0,0,0,2,3,2,3,3,3,2,3,3,3,0,0],
-  [0,0,0,0,2,3,2,2,3,3,3,2,3,3,3,0],
+  [0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0],
+  [0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,2,2,2,3,3,2,3,0,0,0,0,0,0,0],
+  [0,2,3,2,3,3,3,2,3,3,3,0,0,0,0,0],
+  [0,2,3,2,2,3,3,3,2,3,3,3,0,0,0,0],
+  [0,2,2,3,3,3,3,2,2,2,2,0,0,0,0,0],
+  [0,0,0,3,3,3,3,2,2,3,0,0,0,0,0,0],
+  [3,0,5,5,4,5,5,5,4,5,5,3,0,0,0,0],
+  [3,3,5,5,4,5,5,5,4,5,5,3,3,0,0,0],
+  [0,3,5,5,4,4,4,4,4,5,5,3,0,0,0,0],
+  [0,0,3,4,6,4,4,4,6,4,3,0,0,0,0,0],
+  [0,0,5,4,4,4,4,4,4,4,5,0,0,0,0,0],
+  [0,0,0,4,4,4,4,4,4,4,0,0,0,0,0,0],
+  [0,0,0,4,4,4,0,4,4,4,0,0,0,0,0,0],
+  [0,0,2,2,2,0,0,0,2,2,2,0,0,0,0,0],
+  [0,2,2,2,0,0,0,0,0,2,2,2,0,0,0,0],
 ];
 
 const HURT = [
@@ -145,3 +145,37 @@ export function drawMansfield(g, x, y, size, state, frameTick, opts = {}) {
 }
 
 export const MANSFIELD_PALETTE = PALETTE;
+
+/** A sewer rat — the plumber's goomba. Faces left (toward Mansfield), gray,
+ *  with a twitchy pink tail. Drawn with primitives in a `size` box at (x,y). */
+export function drawRat(g, x, y, size, tick, opts = {}) {
+  const s = size;
+  g.save();
+  g.translate(x, y);
+  if (opts.alpha != null) g.globalAlpha = opts.alpha;
+  const bob = Math.sin(tick * 0.5) * s * 0.02;
+  // tail
+  g.strokeStyle = '#d98c8c'; g.lineWidth = Math.max(2, s * 0.035); g.lineCap = 'round';
+  g.beginPath(); g.moveTo(s * 0.78, s * 0.66);
+  g.quadraticCurveTo(s * 1.06, s * 0.5 + Math.sin(tick * 0.6) * s * 0.07, s * 0.92, s * 0.26); g.stroke();
+  // feet
+  const fp = Math.sin(tick * 0.7) * s * 0.03;
+  g.strokeStyle = '#4b5563';
+  g.beginPath(); g.moveTo(s * 0.36, s * 0.82); g.lineTo(s * 0.33 + fp, s * 0.94);
+  g.moveTo(s * 0.6, s * 0.82); g.lineTo(s * 0.63 - fp, s * 0.94); g.stroke();
+  // body + head
+  g.fillStyle = opts.tint || '#717784';
+  g.beginPath(); g.ellipse(s * 0.52, s * 0.62 + bob, s * 0.34, s * 0.27, 0, 0, 7); g.fill();
+  g.beginPath(); g.ellipse(s * 0.24, s * 0.58 + bob, s * 0.2, s * 0.17, 0, 0, 7); g.fill();
+  // ear
+  g.beginPath(); g.ellipse(s * 0.32, s * 0.44 + bob, s * 0.09, s * 0.1, 0, 0, 7); g.fill();
+  g.fillStyle = '#f0a8b0'; g.beginPath(); g.ellipse(s * 0.32, s * 0.45 + bob, s * 0.045, s * 0.055, 0, 0, 7); g.fill();
+  // nose
+  g.beginPath(); g.ellipse(s * 0.07, s * 0.6 + bob, s * 0.05, s * 0.04, 0, 0, 7); g.fill();
+  // eye + whiskers
+  g.fillStyle = '#0a0a0a'; g.beginPath(); g.arc(s * 0.2, s * 0.55 + bob, s * 0.028, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.4)'; g.lineWidth = Math.max(1, s * 0.012);
+  g.beginPath(); g.moveTo(s * 0.1, s * 0.62 + bob); g.lineTo(s * -0.04, s * 0.6 + bob);
+  g.moveTo(s * 0.1, s * 0.66 + bob); g.lineTo(s * -0.03, s * 0.68 + bob); g.stroke();
+  g.restore();
+}
