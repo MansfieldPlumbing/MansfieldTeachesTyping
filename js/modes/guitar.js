@@ -62,8 +62,10 @@ export class GuitarMode {
 
     // touch lane pads
     this.pads = KEYS.map((key, lane) => {
+      // no letters on the pads — the letter rides down the neck on the note;
+      // the pad is just a coloured fret button you can also tap.
       const pad = h('button', { class: 'gg-pad', type: 'button', 'aria-label': `Lane ${key.toUpperCase()}`, style: `--c:${LANE_COLORS[lane]}` },
-        h('span', { class: 'gg-pad-key' }, key.toUpperCase()));
+        h('span', { class: 'gg-pad-fret' }));
       pad.addEventListener('pointerdown', (e) => { e.preventDefault(); this.hitLane(lane); });
       pad.addEventListener('pointerup', () => pad.classList.remove('on'));
       pad.addEventListener('pointerleave', () => pad.classList.remove('on'));
@@ -90,13 +92,37 @@ export class GuitarMode {
 
     this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 200);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const key = new THREE.PointLight(0xffffff, 1.0); key.position.set(0, 6, TARGET_Z + 3); scene.add(key);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.26)); // low + moody for the dive bar
+    const key = new THREE.PointLight(0xffffff, 0.85); key.position.set(0, 6, TARGET_Z + 3); scene.add(key);
 
     // moving neon spotlights
     this.spot1 = new THREE.SpotLight(0x3b82f6, 6, 60, 0.5, 0.5); this.spot1.position.set(-14, 16, 6); scene.add(this.spot1, this.spot1.target);
     this.spot2 = new THREE.SpotLight(0xeab308, 6, 60, 0.5, 0.5); this.spot2.position.set(14, 16, 6); scene.add(this.spot2, this.spot2.target);
     this.neon = new THREE.PointLight(0xec4899, 2, 50, 2); this.neon.position.set(0, 11, TARGET_Z - 8); scene.add(this.neon);
+
+    // ---- dramatic dive-bar atmosphere: drifting haze + sweeping light beams --
+    const smokeTex = this.makeSmokeTex();
+    this.smoke = [];
+    for (let i = 0; i < 12; i++) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeTex, transparent: true,
+        opacity: 0.04 + Math.random() * 0.06, depthWrite: false, blending: THREE.AdditiveBlending, color: 0x6f7e98 }));
+      s.scale.setScalar(7 + Math.random() * 6);
+      const bx = (Math.random() - 0.5) * 24;
+      s.position.set(bx, 1.2 + Math.random() * 5, TARGET_Z - 4 - Math.random() * 13);
+      s.userData = { bx, ph: Math.random() * Math.PI * 2, sp: 0.1 + Math.random() * 0.25 };
+      scene.add(s); this.smoke.push(s);
+    }
+    this.beams = [];
+    const mkBeam = (x, z, color, phase) => {
+      const pivot = new THREE.Group(); pivot.position.set(x, 15, z);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(2.6, 17, 28, 1, true),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+      cone.position.y = -8.5; pivot.add(cone); scene.add(pivot);
+      this.beams.push({ pivot, mat: cone.material, phase, base: 0.09 });
+    };
+    mkBeam(-7, TARGET_Z - 7, 0x3b82f6, 0);
+    mkBeam(7, TARGET_Z - 7, 0xf59e0b, 1.6);
+    mkBeam(0, TARGET_Z - 10, 0xec4899, 3.0);
 
     // fretboard
     const board = new THREE.Mesh(
@@ -120,10 +146,13 @@ export class GuitarMode {
       m.position.set(START_X + lane * LANE_W, 0.12, TARGET_Z); scene.add(m);
       this.targets.push(m);
     }
-    // strike bar
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(LANES * LANE_W + 0.4, 0.12, 0.6),
-      new THREE.MeshStandardMaterial({ color: '#15151f', emissive: '#5b5bff', emissiveIntensity: 0.3 }));
-    bar.position.set(0, 0.06, TARGET_Z); scene.add(bar);
+    // yellow strum line — the "hit here" bar across the whole neck (Rock Band)
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(LANES * LANE_W + 0.6, 0.06, 0.46),
+      new THREE.MeshStandardMaterial({ color: '#facc15', emissive: '#facc15', emissiveIntensity: 1.6, roughness: 0.25 }));
+    bar.position.set(0, 0.16, TARGET_Z); scene.add(bar);
+    const barCore = new THREE.Mesh(new THREE.BoxGeometry(LANES * LANE_W + 0.6, 0.04, 0.12),
+      new THREE.MeshBasicMaterial({ color: '#fff6c0' }));
+    barCore.position.set(0, 0.2, TARGET_Z); scene.add(barCore);
 
     // ---- dive-bar stage: back wall, riser, amps, drum kit, neon ----
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(60, 28),
@@ -145,7 +174,7 @@ export class GuitarMode {
     sign.position.set(0, 10.6, TARGET_Z - 18); scene.add(sign);
 
     // drum kit
-    const kit = new THREE.Group(); kit.position.set(-3.4, 0.6, TARGET_Z - 11.8);
+    const kit = new THREE.Group(); kit.position.set(4.6, 0.6, TARGET_Z - 11.8);
     const red = new THREE.MeshStandardMaterial({ color: '#8a1f2a', roughness: 0.4, metalness: 0.2 });
     const drumhead = new THREE.MeshStandardMaterial({ color: '#e8e4da', roughness: 0.8 });
     const bd = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1.6, 24), red); bd.rotation.x = Math.PI / 2; bd.position.set(0, 0.7, 0.5); kit.add(bd);
@@ -161,19 +190,25 @@ export class GuitarMode {
     const ctx = cv.getContext('2d');
     const tex = new THREE.CanvasTexture(cv);
     tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.colorSpace = THREE.SRGBColorSpace;
-    const star = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 3.0),
+    const star = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4),
       new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.4 }));
-    star.position.set(0.4, 1.55, TARGET_Z - 11.5); scene.add(star);
-    this.band.push({ ctx, tex, plane: star, baseY: 1.55, scale: 1.1, off: 0, frame: -1 });
+    // Marcio off to the side (front-left), center stays clear for notes + lights
+    star.position.set(-4.6, 1.7, TARGET_Z - 10.4); scene.add(star);
+    this.band.push({ ctx, tex, plane: star, baseY: 1.7, scale: 1.25, off: 0, frame: -1 });
 
-    this.humans = [this.makeHuman(-3.4, 'drummer', TARGET_Z - 13.3), this.makeHuman(4.2, 'guitarist', TARGET_Z - 12.2)];
+    this.humans = [this.makeHuman(4.6, 'drummer', TARGET_Z - 13.0), this.makeHuman(2.2, 'guitarist', TARGET_Z - 12.2)];
     this.humans.forEach((hm) => scene.add(hm.group));
 
-    // note pool (reused; songs can have hundreds of onsets)
+    // note pool (reused; songs can have hundreds of onsets). Each note carries
+    // a billboard letter so the key you press rides DOWN THE NECK on the note.
+    this.letterMats = KEYS.map((k) => this.makeLetterMat(k.toUpperCase()));
     this.pool = [];
     const noteGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.18, 24);
     for (let i = 0; i < 60; i++) {
       const m = new THREE.Mesh(noteGeo, new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.7, emissiveIntensity: 0.6 }));
+      const label = new THREE.Sprite(this.letterMats[0]);
+      label.scale.set(0.85, 0.85, 1); label.position.set(0, 0.5, 0);
+      m.add(label); m.userData.label = label;
       m.visible = false; scene.add(m); this.pool.push(m);
     }
 
@@ -190,6 +225,30 @@ export class GuitarMode {
     if (aspect < 1.0) { this.camera.position.set(0, 6.4, TARGET_Z + 6.6); this.camera.lookAt(0, 1.4, TARGET_Z - 9); }
     else { this.camera.position.set(0, 4.6, TARGET_Z + 5.6); this.camera.lookAt(0, 0.6, TARGET_Z - 9); }
     this.camera.updateProjectionMatrix();
+  }
+
+  /* ---- a billboard letter texture for the falling notes ------------------- */
+  makeLetterMat(ch) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 72;
+    const g = cv.getContext('2d');
+    g.font = '800 50px ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,0.9)'; g.strokeText(ch, 36, 40);
+    g.fillStyle = '#ffffff'; g.fillText(ch, 36, 40);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    return new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
+  }
+
+  /* ---- a soft round texture for the haze sprites -------------------------- */
+  makeSmokeTex() {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const g = cv.getContext('2d');
+    const grd = g.createRadialGradient(64, 64, 3, 64, 64, 64);
+    grd.addColorStop(0, 'rgba(255,255,255,0.85)');
+    grd.addColorStop(0.5, 'rgba(255,255,255,0.22)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd; g.beginPath(); g.arc(64, 64, 64, 0, 7); g.fill();
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
   }
 
   /* ---- a low-poly human bandmate (box figure) ----------------------------- */
@@ -310,6 +369,7 @@ export class GuitarMode {
       const s = Math.abs(dt) < 0.15 ? 1.25 : 1; m.scale.setScalar(s);
       const col = new THREE.Color(LANE_COLORS[n.lane]);
       m.material.color.copy(col); m.material.emissive.copy(col);
+      m.userData.label.material = this.letterMats[n.lane]; // letter rides the note
     }
     for (; pi < this.pool.length; pi++) this.pool[pi].visible = false;
 
@@ -350,6 +410,19 @@ export class GuitarMode {
     this.spot1.target.position.set(Math.sin(now * 2) * 10, 0, TARGET_Z + Math.cos(now * 0.5) * 5); this.spot1.target.updateMatrixWorld();
     this.spot2.target.position.set(Math.cos(now * 1.5) * 10, 0, TARGET_Z + Math.sin(now * 0.8) * 5); this.spot2.target.updateMatrixWorld();
     this.neon.intensity = 2 + Math.sin(now * 10) * 0.6;
+
+    // sweeping light beams + drifting haze
+    for (const bm of this.beams) {
+      bm.pivot.rotation.z = Math.sin(now * 0.55 + bm.phase) * 0.55;
+      bm.pivot.rotation.x = Math.cos(now * 0.4 + bm.phase) * 0.22;
+      bm.mat.opacity = bm.base + (t < 0 ? 0 : Math.abs(Math.sin(now * 8 + bm.phase)) * 0.07);
+    }
+    for (const s of this.smoke) {
+      s.position.x = s.userData.bx + Math.sin(now * 0.18 + s.userData.ph) * 2.4;
+      s.position.y += s.userData.sp * 0.008;
+      if (s.position.y > 7) s.position.y = 1.0;
+      s.material.rotation += 0.0015;
+    }
 
     // progress
     if (this.duration) this.progEl.style.width = Math.min(100, Math.max(0, (t / this.duration) * 100)) + '%';
