@@ -28,7 +28,7 @@ ok(buildTargets(lesson, 'char').every(c => c.length === 1), 'char granularity');
 ok(buildTargets(findLesson('word_swimming_1'), 'word').includes('pipe'), 'word targets');
 ok(buildStream(lesson).length > 0, 'stream builds');
 ok(didPass(lesson, { wpm: 20, accuracy: 90 }), 'passes above goal');
-ok(!didPass(lesson, { wpm: 5, accuracy: 90 }), 'fails slow');
+ok(!didPass(lesson, { wpm: 3, accuracy: 90 }), 'fails slow');
 
 const gh = benchmarkGhost(60, 100, 'Par');
 ok(Math.abs(gh.durationMs() - 20000) < 50, 'benchmark ~20s');

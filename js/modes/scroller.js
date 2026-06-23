@@ -10,7 +10,7 @@ import { Keyboard } from '../keyboard.js';
 import { Metrics, buildTargets, didPass } from '../engine.js';
 import { GhostRecorder, benchmarkGhost, getPBGhost, maybeSavePB } from '../ghost.js';
 import { drawMansfield, drawRat, drawHydrant } from '../sprite.js';
-import { KIND_WORDS, pick } from '../lessons.js';
+import { KIND_WORDS, pick, LESSON_CATEGORIES } from '../lessons.js';
 import { playCoin, playStomp, playClank, playJump, resumeAudio, playWinTheme } from '../audio.js';
 
 const SLOT = 172;
@@ -42,9 +42,15 @@ export class ScrollerMode {
     this.rec = new GhostRecorder();
 
     this.totalDist = this.targets.length * SLOT;
-    this.ghosts = [{ ghost: benchmarkGhost(this.lesson.minWpm, this.totalChars || 1, 'Par'), tint: '#c2a878', name: 'Par' }];
-    const pb = getPBGhost(this.lesson.id, this.modeId);
-    if (pb) this.ghosts.push({ ghost: pb, tint: '#4ec98a', name: 'Your best' });
+    // MTT 1992 fidelity: the beginner level had no rival. Phase 1 (home row)
+    // runs solo & self-paced; the ghost-racer enters from Phase 2 onward.
+    const beginner = LESSON_CATEGORIES[0].lessons.some((l) => l.id === this.lesson.id);
+    this.ghosts = [];
+    if (!beginner) {
+      this.ghosts.push({ ghost: benchmarkGhost(this.lesson.minWpm, this.totalChars || 1, 'Par'), tint: '#c2a878', name: 'Par' });
+      const pb = getPBGhost(this.lesson.id, this.modeId);
+      if (pb) this.ghosts.push({ ghost: pb, tint: '#4ec98a', name: 'Your best' });
+    }
 
     this.cleared = 0; this.tick = 0; this.displayDist = 0;
     this.jumpStart = -9999; this.jumpH = 0; this.jumpKind = 'block';
@@ -81,7 +87,9 @@ export class ScrollerMode {
       this.metrics.hit(); this.kb.press(ch);
       this.clear(a);
     } else {
-      this.metrics.miss(); this.hurtUntil = performance.now() + 240; this.shakeUntil = performance.now() + 180;
+      // MTT-gentle: a wrong key never punishes — Mansfield just waits on the
+      // same letter. Only a soft clank + a silent error tally (shown at the end).
+      this.metrics.miss();
       playClank();
       if (this.metrics.errors % 4 === 0) this.toast(pick(KIND_WORDS.miss), 'miss');
     }
@@ -158,9 +166,9 @@ export class ScrollerMode {
 
     this.updateParticles(g);
 
-    // Mansfield — jump arc on a clear
-    let state = 'run';
-    if (now < this.hurtUntil) state = 'hurt';
+    // Mansfield — stands at the gate until you start, runs as you clear, jumps
+    // on a smash. A wrong key never knocks him into a hurt state (MTT-gentle).
+    let state = this.raceStart == null ? 'idle' : 'run';
     const jt = (now - this.jumpStart) / JUMP_MS;
     let yOff = 0;
     if (jt >= 0 && jt <= 1) { state = 'jump'; yOff = -Math.sin(jt * Math.PI) * this.jumpH; }
