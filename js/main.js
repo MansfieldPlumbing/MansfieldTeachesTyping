@@ -101,7 +101,8 @@ function renderLanding() {
     h('footer', { class: 'foot' },
       h('span', {}, 'Mansfield Plumbing · built in the spirit of the 1992 original'),
       h('span', {}, h('a', { href: 'https://github.com/MansfieldPlumbing/MansfieldTeachesTyping', target: '_blank', rel: 'noreferrer' }, 'github.com/MansfieldPlumbing')),
-      h('span', { style: 'opacity:.7' }, 'Music by ', h('a', { href: 'https://incompetech.com', target: '_blank', rel: 'noreferrer' }, 'Kevin MacLeod'), ' · CC BY 4.0')),
+      h('span', { style: 'opacity:.7' }, 'Music by ', h('a', { href: 'https://incompetech.com', target: '_blank', rel: 'noreferrer' }, 'Kevin MacLeod'), ' · CC BY 4.0'),
+      h('span', { style: 'opacity:.7' }, h('button', { class: 'link-btn', title: 'Clear the cache and reload the freshest version', onclick: forceUpdate }, '↻ Update to latest'))),
   );
   app.appendChild(shell);
 }
@@ -218,12 +219,48 @@ function renderGuitarResults(res) {
   app.appendChild(shell);
 }
 
+/* ---- force-update: blow away every cache + SW so the next load is the
+   freshest binary. Wired to the footer "↻ Update to latest" link. ----------- */
+
+async function forceUpdate(e) {
+  const btn = e && e.currentTarget;
+  if (btn) { btn.classList.add('busy'); btn.textContent = '↻ Updating…'; }
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch (_) { /* ignore — we reload regardless */ }
+  // cache-bust the navigation itself so we don't get a 304 from the HTTP cache
+  location.replace(location.pathname + '?u=' + Date.now());
+}
+
 /* ---- boot ----------------------------------------------------------------- */
 
 initTheme();
 renderLanding();
 
-// installable PWA
+// installable PWA — register, and when a new worker takes over, reload once so
+// the user is always on the latest binary (pairs with the network-first SW).
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      reg.addEventListener('updatefound', () => {
+        const sw = reg.installing;
+        if (!sw) return;
+        sw.addEventListener('statechange', () => {
+          // a new worker is waiting and we already control the page → activate it
+          if (sw.state === 'installed' && navigator.serviceWorker.controller) sw.postMessage('skipWaiting');
+        });
+      });
+    }).catch(() => {});
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloaded) return; reloaded = true; location.reload();
+    });
+  });
 }

@@ -18,8 +18,8 @@ const PALETTE = {
 };
 
 const IDLE = [
-  [0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0],
-  [0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0],
+  [0,0,2,2,2,2,2,2,2,0,0,0,0,0,0,0],
   [0,0,2,2,2,3,3,2,3,0,0,0,0,0,0,0],
   [0,2,3,2,3,3,3,2,3,3,3,0,0,0,0,0],
   [0,2,3,2,2,3,3,3,2,3,3,3,0,0,0,0],
@@ -37,8 +37,8 @@ const IDLE = [
 ];
 
 const RUN1 = [
-  [0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0],
-  [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0],
+  [0,0,0,0,2,2,2,0,0,0,0,0,0,0,0,0],
+  [0,0,0,2,2,2,2,2,2,2,0,0,0,0,0,0],
   [0,0,0,2,2,2,3,3,2,3,0,0,0,0,0,0],
   [0,0,2,3,2,3,3,3,2,3,3,3,0,0,0,0],
   [0,0,2,3,2,2,3,3,3,2,3,3,3,0,0,0],
@@ -56,8 +56,8 @@ const RUN1 = [
 ];
 
 const RUN2 = [
-  [0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0],
-  [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0],
+  [0,0,0,0,2,2,2,0,0,0,0,0,0,0,0,0],
+  [0,0,0,2,2,2,2,2,2,2,0,0,0,0,0,0],
   [0,0,0,2,2,2,3,3,2,3,0,0,0,0,0,0],
   [0,0,2,3,2,3,3,3,2,3,3,3,0,0,0,0],
   [0,0,2,3,2,2,3,3,3,2,3,3,3,0,0,0],
@@ -75,8 +75,8 @@ const RUN2 = [
 ];
 
 const JUMP = [
-  [0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0],
-  [0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0],
+  [0,0,2,2,2,2,2,2,2,0,0,0,0,0,0,0],
   [0,0,2,2,2,3,3,2,3,0,0,0,0,0,0,0],
   [0,2,3,2,3,3,3,2,3,3,3,0,0,0,0,0],
   [0,2,3,2,2,3,3,3,2,3,3,3,0,0,0,0],
@@ -94,8 +94,8 @@ const JUMP = [
 ];
 
 const HURT = [
-  [0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0],
-  [0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0],
+  [0,0,2,2,2,2,2,2,2,0,0,0,0,0,0,0],
   [0,0,2,2,2,3,3,2,3,0,0,0,0,0,0,0],
   [0,2,3,2,2,3,3,2,2,3,3,0,0,0,0,0],
   [0,2,3,2,2,3,3,3,2,3,3,3,0,0,0,0],
@@ -145,6 +145,57 @@ export function drawMansfield(g, x, y, size, state, frameTick, opts = {}) {
 }
 
 export const MANSFIELD_PALETTE = PALETTE;
+
+// rounded-rect helper for the prop sprites below
+function rr(g, x, y, w, h, r) {
+  g.beginPath(); g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+
+/** A fire hydrant — the daytime obstacle Mansfield hops. Drawn in a `size` box
+ *  at (x,y) top-left; it sits on the ground at y+size. Pure prop art; the game
+ *  stamps the target letter on its face. opts.tint glows the body when active. */
+export function drawHydrant(g, x, y, size, opts = {}) {
+  const s = size;
+  g.save();
+  g.translate(x, y);
+  if (opts.alpha != null) g.globalAlpha = opts.alpha;
+  const cx = s * 0.5;
+  const red = opts.tint || '#d23b2e';
+  const redDark = '#8f261c';
+  const redLite = '#f0594a';
+  const brass = '#d9b24a';
+
+  // ground base flange
+  g.fillStyle = redDark; rr(g, s * 0.16, s * 0.86, s * 0.68, s * 0.12, s * 0.03); g.fill();
+  g.fillStyle = '#6f1c14'; rr(g, s * 0.24, s * 0.80, s * 0.52, s * 0.08, s * 0.02); g.fill();
+
+  // side nozzles + brass caps
+  g.fillStyle = redDark;
+  rr(g, s * 0.14, s * 0.44, s * 0.18, s * 0.18, s * 0.05); g.fill();
+  rr(g, s * 0.68, s * 0.44, s * 0.18, s * 0.18, s * 0.05); g.fill();
+  g.fillStyle = brass;
+  g.beginPath(); g.arc(s * 0.17, s * 0.53, s * 0.075, 0, 7); g.fill();
+  g.beginPath(); g.arc(s * 0.83, s * 0.53, s * 0.075, 0, 7); g.fill();
+
+  // body
+  g.fillStyle = red; rr(g, s * 0.30, s * 0.28, s * 0.40, s * 0.56, s * 0.11); g.fill();
+  g.fillStyle = redLite; rr(g, s * 0.33, s * 0.31, s * 0.09, s * 0.50, s * 0.045); g.fill();
+  g.fillStyle = redDark; rr(g, s * 0.60, s * 0.31, s * 0.08, s * 0.50, s * 0.04); g.fill();
+
+  // bonnet dome
+  g.fillStyle = red;
+  g.beginPath(); g.moveTo(cx - s * 0.22, s * 0.30); g.arc(cx, s * 0.30, s * 0.22, Math.PI, 2 * Math.PI); g.closePath(); g.fill();
+  g.fillStyle = redLite;
+  g.beginPath(); g.arc(cx, s * 0.30, s * 0.17, Math.PI * 1.05, Math.PI * 1.45); g.lineWidth = s * 0.035; g.strokeStyle = redLite; g.stroke();
+
+  // top bolt cap (brass pentagon-ish nut)
+  g.fillStyle = brass; rr(g, cx - s * 0.07, s * 0.05, s * 0.14, s * 0.11, s * 0.025); g.fill();
+  g.fillStyle = '#b8902f'; rr(g, cx - s * 0.07, s * 0.12, s * 0.14, s * 0.03, s * 0.01); g.fill();
+
+  g.restore();
+}
 
 /** A sewer rat — the plumber's goomba. Faces left (toward Mansfield), gray,
  *  with a twitchy pink tail. Drawn with primitives in a `size` box at (x,y). */

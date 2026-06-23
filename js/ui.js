@@ -20,29 +20,34 @@ export function h(tag, attrs = {}, ...kids) {
 
 export function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
-/** Build the full-screen game stage. Returns the pieces a mode needs. */
+/** Build the full-screen game stage. Returns the pieces a mode needs.
+   HUD overlays the game across the top: a real Back button on the left, big
+   horizontal stats, and a slot (top-right) for the keyboard's finger guide. */
 export function mountStage(parent, { goalLabel = 'Goal', onExit } = {}) {
-  const exit = h('button', { class: 'btn-exit', title: 'Exit (Esc)', onclick: onExit, html: '&times;' });
+  const back = h('button', { class: 'btn-back-game', type: 'button', title: 'Back (Esc)', onclick: onExit },
+    h('span', { class: 'arrow' }, '←'), 'Back');
 
   const stat = (cls, k) => h('div', { class: 'stat ' + cls },
     h('span', { class: 'k' }, k), h('span', { class: 'v' }, '—'));
 
   const sWpm = stat('', 'WPM');
-  const sAcc = stat('', 'Accuracy');
+  const sAcc = stat('', 'Acc');
   const sTime = stat('', 'Time');
   const sStreak = stat('streak', 'Streak');
   const sGoal = stat('goal', goalLabel);
 
-  const hud = h('div', { class: 'hud' }, exit, sWpm, sAcc, sTime, sStreak, sGoal);
+  const finger = h('div', { class: 'finger-slot' });
+  const hud = h('div', { class: 'hud' },
+    back, h('div', { class: 'stats' }, sWpm, sAcc, sTime, sStreak, sGoal), finger);
   const field = h('div', { class: 'field' });
   const kbMount = h('div', { class: 'kb-mount' });
-  const stage = h('div', { class: 'stage fade-in' }, hud, field, kbMount);
+  const stage = h('div', { class: 'stage fade-in' }, field, hud, kbMount);
   parent.appendChild(stage);
 
   const setV = (el, v) => { el.querySelector('.v').innerHTML = v; };
 
   return {
-    stage, field, kbMount,
+    stage, field, kbMount, finger,
     setGoal: (v) => setV(sGoal, v),
     update(snap, elapsedMs) {
       setV(sWpm, snap.wpm);

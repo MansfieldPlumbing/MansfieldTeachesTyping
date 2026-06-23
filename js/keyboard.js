@@ -9,10 +9,11 @@ import { KB_ROWS, fingerFor, fingerLabel, keyMatches, needsShift } from './finge
 const DISPLAY = { ' ': 'space' };
 
 export class Keyboard {
-  constructor(mount, { onKey } = {}) {
+  constructor(mount, { onKey, hintEl } = {}) {
     this.onKey = onKey || (() => {});
     this.keyEls = new Map();   // lowercase char -> element
     this.next = null;
+    this.hint = hintEl || null; // finger-guide target (lives in the HUD now)
     this.el = document.createElement('div');
     this.el.className = 'kb';
     this._build();
@@ -63,11 +64,7 @@ export class Keyboard {
     // space row
     const r4 = this._row();
     this._addKey(r4, '', ' ', 'space');
-
-    // hint / finger guide
-    this.hint = document.createElement('div');
-    this.hint.className = 'kb-hint';
-    this.el.appendChild(this.hint);
+    // the finger guide lives in the HUD (this.hint), not inside the keyboard
   }
 
   _row() { const d = document.createElement('div'); d.className = 'kb-row'; this.el.appendChild(d); return d; }
@@ -91,7 +88,7 @@ export class Keyboard {
     this._shiftR.classList.remove('next');
     this.next = null;
 
-    if (targetChar == null || targetChar === '') { this.hint.textContent = ''; return; }
+    if (targetChar == null || targetChar === '') { if (this.hint) this.hint.textContent = ''; return; }
 
     const finger = fingerFor(targetChar);
     const handCls = finger.hand === 'left' ? 'f-l' : 'f-r';
@@ -110,7 +107,7 @@ export class Keyboard {
     if (sh === 'right') this._shiftR.classList.add('next');
 
     const dot = finger.hand;
-    this.hint.innerHTML = `<span class="finger"><i class="dot ${dot}"></i>${fingerLabel(targetChar)}</span>`;
+    if (this.hint) this.hint.innerHTML = `<span class="finger"><i class="dot ${dot}"></i>${fingerLabel(targetChar)}</span>`;
   }
 
   /** x-center of a key, in the coordinate space of `container` (a DOM el). */

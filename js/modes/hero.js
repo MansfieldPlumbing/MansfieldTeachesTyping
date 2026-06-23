@@ -21,7 +21,7 @@ export class HeroMode {
 
   start() {
     resumeAudio();
-    const ui = this.ui = mountStage(this.host, { goalLabel: 'Goal WPM', onExit: () => this.onExit() });
+    const ui = this.ui = mountStage(this.host, { goalLabel: 'Goal', onExit: () => this.onExit() });
     ui.stage.classList.add('immerse');
     ui.setGoal(this.lesson.minWpm);
 
@@ -35,7 +35,7 @@ export class HeroMode {
     this.layer.className = 'rain-layer';
     ui.field.appendChild(this.layer);
 
-    this.kb = new Keyboard(ui.kbMount, { onKey: (c) => this.press(c) });
+    this.kb = new Keyboard(ui.kbMount, { onKey: (c) => this.press(c), hintEl: ui.finger });
 
     this.queue = buildTargets(this.lesson, 'word'); // groups: ff, dd, fgf, jhj, words…
     this.total = this.queue.length;

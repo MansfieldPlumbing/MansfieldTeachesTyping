@@ -37,7 +37,7 @@ try {
   const wpm = await page.$eval('.hud .stat .v', (e) => e.textContent);
   console.log('adventure ok — stage + keyboard render, WPM reads', JSON.stringify(wpm));
   // exit
-  await page.click('.btn-exit');
+  await page.click('.btn-back-game');
   await page.waitForSelector('.lesson', { timeout: 5000 });
 
   // --- back to landing, Hero ---
@@ -51,7 +51,7 @@ try {
   await page.waitForTimeout(600);
   await typeText(page, 'fdsfjk');
   console.log('hero ok — key-rain layer renders');
-  await page.click('.btn-exit');
+  await page.click('.btn-back-game');
   await page.waitForSelector('.lesson', { timeout: 5000 });
 
   // --- Focus, type a whole short lesson is too long; just verify it mounts ---
@@ -67,7 +67,7 @@ try {
   console.log('focus ok — caret advances, typed:', JSON.stringify(done));
 
   // exit returns to lesson-select; go back to landing, then screenshot
-  await page.click('.btn-exit');
+  await page.click('.btn-back-game');
   await page.waitForSelector('.lesson', { timeout: 5000 });
   await page.click('.btn-back');
   await page.waitForSelector('.cards', { timeout: 5000 });

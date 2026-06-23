@@ -17,7 +17,7 @@ export class FocusMode {
 
   start() {
     resumeAudio();
-    const ui = this.ui = mountStage(this.host, { goalLabel: 'Goal WPM', onExit: () => this.onExit() });
+    const ui = this.ui = mountStage(this.host, { goalLabel: 'Goal', onExit: () => this.onExit() });
     ui.setGoal(this.lesson.minWpm);
 
     this.typer = new LinearTyper(buildStream(this.lesson));
@@ -30,7 +30,7 @@ export class FocusMode {
     wrap.appendChild(this.textEl);
     ui.field.appendChild(wrap);
 
-    this.kb = new Keyboard(ui.kbMount, { onKey: (c) => this.input(c) });
+    this.kb = new Keyboard(ui.kbMount, { onKey: (c) => this.input(c), hintEl: ui.finger });
 
     this._onKey = (e) => {
       if (e.key === 'Escape') return this.onExit();
