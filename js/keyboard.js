@@ -110,9 +110,7 @@ export class Keyboard {
     if (sh === 'right') this._shiftR.classList.add('next');
 
     const dot = finger.hand;
-    const label = targetChar === ' ' ? 'Space' : (DISPLAY[targetChar] || targetChar);
-    this.hint.innerHTML =
-      `<span class="finger"><span class="dot ${dot}"></span> ${fingerLabel(targetChar)} &nbsp;·&nbsp; next: <b>${label}</b></span>`;
+    this.hint.innerHTML = `<span class="finger"><i class="dot ${dot}"></i>${fingerLabel(targetChar)}</span>`;
   }
 
   /** x-center of a key, in the coordinate space of `container` (a DOM el). */

@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch();
+const p = await b.newPage({ viewport:{ width:1320, height:820 } });
+await p.addInitScript(()=>{try{localStorage.setItem('mtt.theme','dark');}catch{}});
+await p.goto('http://localhost:8123/index.html',{waitUntil:'networkidle'});
+await p.waitForSelector('.cards .card');
+await p.click('.cards .card:nth-child(3)');
+await p.waitForSelector('.lesson'); await p.click('.lesson:nth-child(1)');
+await p.waitForSelector('.rain-note',{timeout:5000});
+await p.waitForTimeout(2000);
+await p.screenshot({ path:'tests/kr-acrylic.png' });
+await b.close(); console.log('shot done');
