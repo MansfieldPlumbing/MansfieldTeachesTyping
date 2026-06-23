@@ -5,7 +5,7 @@ import { LESSON_CATEGORIES } from './lessons.js';
 import { getPBStats } from './ghost.js';
 import { h, clear, resultsScreen } from './ui.js';
 import { drawMansfield } from './sprite.js';
-import { toggleMute, isMuted, resumeAudio, playCoin, Music } from './audio.js';
+import { toggleMute, isMuted, resumeAudio, playCoin, Music, bg } from './audio.js';
 import { FocusMode } from './modes/focus.js';
 import { ScrollerMode } from './modes/scroller.js';
 import { HeroMode } from './modes/hero.js';
@@ -76,6 +76,7 @@ function topbar(onBack) {
 /* ---- screens -------------------------------------------------------------- */
 
 function renderLanding() {
+  bg.stop();
   clear(app);
   const cards = h('div', { class: 'cards' });
   for (const key of Object.keys(MODES)) {
@@ -106,6 +107,7 @@ function renderLanding() {
 }
 
 function renderLessonSelect(modeKey) {
+  bg.stop();
   clear(app);
   const m = MODES[modeKey];
   const grid = h('div', {});
@@ -140,7 +142,9 @@ let current = null;
 
 function play(modeKey, lesson) {
   resumeAudio();
-  Music.play();
+  Music.pause();
+  // chiptune backing — a different tune per level; Focus stays zen (silent)
+  if (modeKey === 'focus') bg.stop(); else bg.play(FLAT.indexOf(lesson));
   clear(app);
   if (current) { current.destroy(); current = null; }
   const Mode = MODES[modeKey].cls;
@@ -153,7 +157,7 @@ function play(modeKey, lesson) {
 }
 
 function renderResults(modeKey, lesson, res) {
-  Music.pause();
+  Music.pause(); bg.stop();
   clear(app);
   const idx = FLAT.findIndex((l) => l.id === lesson.id);
   const nextLesson = idx >= 0 && idx < FLAT.length - 1 ? FLAT[idx + 1] : null;
@@ -185,7 +189,7 @@ function animateMascot(canvas) {
 
 function playGuitar(difficulty = 'easy') {
   resumeAudio();
-  Music.pause(); // the stems ARE the music here
+  Music.pause(); bg.stop(); // the stems ARE the music here
   clear(app);
   if (current) { current.destroy(); current = null; }
   current = new GuitarMode(app, {
@@ -197,6 +201,7 @@ function playGuitar(difficulty = 'easy') {
 }
 
 function renderGuitarResults(res) {
+  bg.stop();
   clear(app);
   const cell = (k, v) => h('div', { class: 'cell' }, h('span', { class: 'k' }, k), h('span', { class: 'v' }, String(v)));
   const shell = h('div', { class: 'shell' }, topbar(),
