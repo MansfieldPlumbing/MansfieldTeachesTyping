@@ -22,7 +22,7 @@ export class HeroMode {
   start() {
     resumeAudio();
     const ui = this.ui = mountStage(this.host, { goalLabel: 'Goal WPM', onExit: () => this.onExit() });
-    ui.stage.classList.add('rain');
+    ui.stage.classList.add('immerse');
     ui.setGoal(this.lesson.minWpm);
 
     // rain-on-glass backdrop, behind the falling groups
