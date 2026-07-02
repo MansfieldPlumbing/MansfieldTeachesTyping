@@ -20,7 +20,7 @@ const MODES = {
   },
   guitar: {
     num: '02', title: 'Guitar God', tone: 'blue', cls: GuitarMode, song: true,
-    blurb: 'A real 3D rhythm game. Notes fall a neon fretboard — hit the lane on the beat to keep the band playing; miss and the stem drops out. Real song, real stems.',
+    blurb: 'Shred on a dive-bar stage: whole words fall the neon fretboard — type each before it crosses the strum line. Start easy (sad, bad, jack) and climb. Real 3D, real band.',
   },
   hero: {
     num: '03', title: 'Key Rain', tone: 'green', cls: HeroMode,
@@ -190,7 +190,7 @@ function animateMascot(canvas) {
 
 function playGuitar(difficulty = 'easy') {
   resumeAudio();
-  Music.pause(); bg.stop(); // the stems ARE the music here
+  Music.pause(); bg.stop(); // GuitarMode starts its own backing on start()
   clear(app);
   if (current) { current.destroy(); current = null; }
   current = new GuitarMode(app, {
