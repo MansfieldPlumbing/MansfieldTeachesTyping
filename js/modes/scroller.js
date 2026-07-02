@@ -10,6 +10,7 @@ import { Keyboard } from '../keyboard.js';
 import { Metrics, buildTargets, didPass } from '../engine.js';
 import { GhostRecorder, benchmarkGhost, getPBGhost, maybeSavePB } from '../ghost.js';
 import { drawMansfield, drawRat, drawHydrant } from '../sprite.js';
+import { TILE, drawTile, tilesReady } from '../tiles.js';
 import { KIND_WORDS, pick, LESSON_CATEGORIES } from '../lessons.js';
 import { playCoin, playStomp, playClank, playJump, resumeAudio, playWinTheme } from '../audio.js';
 
@@ -209,17 +210,22 @@ export class ScrollerMode {
 
     this.drawWarpPipes(g, w, cam);
 
-    // grassy ground + dirt that flows down behind the acrylic keyboard
-    const gy = this.groundY;
-    g.fillStyle = '#7d5a3a'; g.fillRect(0, gy, w, h - gy);
-    g.fillStyle = '#56b257'; g.fillRect(0, gy, w, 12);
-    g.fillStyle = '#3f9244'; g.fillRect(0, gy + 12, w, 4);
-    const bw = 56, bh = 26, bx = cam % bw;
-    g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 2;
-    for (let row = 0; row < Math.ceil((h - gy) / bh) + 1; row++) {
-      const stagger = row % 2 ? bw / 2 : 0;
-      for (let x = -bx - stagger; x < w + bw; x += bw) g.strokeRect(x, gy + 16 + row * bh, bw, bh);
+    // real grass-topped ground tiles flowing behind the acrylic keyboard
+    this.drawTiledGround(g, w, h, cam, TILE.grass, TILE.dirt, '#7d5a3a', '#56b257');
+  }
+
+  // stamp a surface row of tiles at groundY then fill dirt/stone below,
+  // scrolling with the camera. Falls back to flat colour before the atlas loads.
+  drawTiledGround(g, w, h, cam, surfaceIdx, fillIdx, dirtCol, grassCol) {
+    const gy = this.groundY, TS = 54, off = ((cam % TS) + TS) % TS;
+    if (!tilesReady()) {
+      g.fillStyle = dirtCol; g.fillRect(0, gy, w, h - gy);
+      if (grassCol) { g.fillStyle = grassCol; g.fillRect(0, gy, w, 12); }
+      return;
     }
+    for (let x = -off - TS; x < w + TS; x += TS) drawTile(g, surfaceIdx, x, gy, TS, TS);
+    for (let y = gy + TS; y < h; y += TS)
+      for (let x = -off - TS; x < w + TS; x += TS) drawTile(g, fillIdx, x, y, TS, TS);
   }
 
   drawUnderground(g, w, h, cam) {
@@ -237,16 +243,9 @@ export class ScrollerMode {
 
     this.drawWarpPipes(g, w, cam);
 
-    // sewer brick floor
-    const gy = this.groundY;
-    g.fillStyle = '#1b1410'; g.fillRect(0, gy, w, h - gy);
-    const bw = 56, bh = 26, bx = cam % bw;
-    g.strokeStyle = 'rgba(192,138,90,0.22)'; g.lineWidth = 2;
-    for (let row = 0; row < Math.ceil((h - gy) / bh) + 1; row++) {
-      const stagger = row % 2 ? bw / 2 : 0;
-      for (let x = -bx - stagger; x < w + bw; x += bw) g.strokeRect(x, gy + row * bh, bw, bh);
-    }
-    g.fillStyle = 'rgba(192,138,90,0.5)'; g.fillRect(0, gy - 2, w, 3);
+    // stone/gravel floor tiles
+    this.drawTiledGround(g, w, h, cam, TILE.stone, TILE.gravel, '#1b1410', null);
+    g.fillStyle = 'rgba(192,138,90,0.5)'; g.fillRect(0, this.groundY - 2, w, 3);
   }
 
   drawClouds(g, w, cam) {
@@ -282,23 +281,19 @@ export class ScrollerMode {
 
   drawBlock(g, t, x, active) {
     const s = this.sprite, y = this.airY, left = x - s / 2;
-    // SMB3-style brick body
-    g.fillStyle = active ? '#c8612e' : '#8a4a28';
-    this.roundRect(g, left, y, s, s, s * 0.08); g.fill();
-    // bevel: bright top, dark bottom
-    g.fillStyle = 'rgba(255,255,255,0.22)'; g.fillRect(left + s * 0.06, y + s * 0.06, s * 0.88, s * 0.07);
-    g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(left + s * 0.06, y + s * 0.87, s * 0.88, s * 0.07);
-    // mortar grid — the classic offset brick courses
-    g.strokeStyle = active ? 'rgba(50,18,8,0.5)' : 'rgba(20,10,4,0.45)'; g.lineWidth = Math.max(1.5, s * 0.028);
-    g.beginPath();
-    g.moveTo(left, y + s * 0.5); g.lineTo(left + s, y + s * 0.5);
-    g.moveTo(left + s * 0.5, y); g.lineTo(left + s * 0.5, y + s * 0.5);
-    g.moveTo(left + s * 0.25, y + s * 0.5); g.lineTo(left + s * 0.25, y + s);
-    g.moveTo(left + s * 0.75, y + s * 0.5); g.lineTo(left + s * 0.75, y + s);
-    g.stroke();
-    // outline
-    g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 2;
-    this.roundRect(g, left, y, s, s, s * 0.08); g.stroke();
+    if (drawTile(g, TILE.brick, left, y, s, s)) {
+      // real brick tile; dim it when it isn't the current target
+      if (!active) { g.fillStyle = 'rgba(0,0,0,0.32)'; g.fillRect(left, y, s, s); }
+      g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 2; g.strokeRect(left, y, s, s);
+    } else {
+      // procedural SMB3 brick fallback (before the atlas loads)
+      g.fillStyle = active ? '#c8612e' : '#8a4a28';
+      this.roundRect(g, left, y, s, s, s * 0.08); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.22)'; g.fillRect(left + s * 0.06, y + s * 0.06, s * 0.88, s * 0.07);
+      g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(left + s * 0.06, y + s * 0.87, s * 0.88, s * 0.07);
+      g.strokeStyle = 'rgba(0,0,0,0.5)'; g.lineWidth = 2;
+      this.roundRect(g, left, y, s, s, s * 0.08); g.stroke();
+    }
     // the letter, INSIDE the block
     g.fillStyle = active ? '#fff4dc' : 'rgba(255,244,220,0.72)';
     g.font = `800 ${Math.round(s * 0.5)}px ui-monospace, monospace`;
