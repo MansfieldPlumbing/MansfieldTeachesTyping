@@ -1,49 +1,67 @@
-/* Guitar God — the user's stem-rhythm game, ported to vanilla three.js (3D).
-   Notes fall down a neon fretboard toward the strike line; hit the lane key on
-   the beat to keep that instrument's stem playing, miss and it muffles + boos.
-   Powered by real demucs stems of NEFFEX "Fight Back". */
+/* Guitar God — a rhythm-typing shred on a 3D dive-bar stage (vanilla three.js).
+   Whole WORDS fall down the neon fretboard; type each one before it crosses the
+   yellow strum line (Tux-Typing "defender" style). Miss and your combo drops.
+   Backed by the game's soundtrack — no external song, nothing to license. */
 
 import * as THREE from '../../vendor/three.module.min.js';
-import { StemPlayer, LANE_COLORS, HIT_WINDOW, judge } from '../stem-player.js';
 import { drawMansfield } from '../sprite.js';
 import { h, clear } from '../ui.js';
-import { resumeAudio } from '../audio.js';
+import { resumeAudio, bg, playStrum, playClank, playCoin } from '../audio.js';
 
 const LANES = 5, LANE_W = 1.12, START_X = -(LANES * LANE_W) / 2 + LANE_W / 2, TARGET_Z = 5;
 const KEYS = ['d', 'f', 'g', 'h', 'j'];
-const SPEEDS = { easy: 7, medium: 10, hard: 14 };
+// five-fret colours (green / red / yellow / blue / orange)
+const LANE_COLORS = ['#22c55e', '#ef4444', '#eab308', '#3b82f6', '#f97316'];
+
+// Whole WORDS fall down the neck — type each before it crosses the strum line
+// (Tux-Typing "defender" style). Start dead easy on the home row, then climb.
+const WORD_SETS = {
+  easy:   ['sad','bad','dad','jack','tan','ask','all','fall','half','hall','lad','gas','has','had','flask','glass','salad','flash','dash','shall','flag','gash'],
+  medium: ['pipe','clog','drip','vent','leak','tank','pump','sump','valve','seal','flow','drain','elbow','brass','fixture','gasket','wrench','copper','faucet','spigot'],
+  hard:   ['manifold','soldered','vacuum','bypass','subfloor','critical','industrial','evacuate','pressure','pipeline','fixtures','high pressure'],
+};
+const FALL_MS = { easy: 6400, medium: 5300, hard: 4400 }; // top of neck -> strum line
+const SPAWN_MS = { easy: 2700, medium: 2100, hard: 1650 };
+const FALL_DIST = 34;   // world units a word travels down the neck
+const MAX_WORDS = 4;
 
 export class GuitarMode {
-  constructor(host, { onFinish, onExit, difficulty = 'medium' }) {
+  constructor(host, { onFinish, onExit, difficulty = 'easy' }) {
     this.host = host; this.onFinish = onFinish; this.onExit = onExit;
     this.difficulty = difficulty;
     this.modeId = 'guitar';
     this.score = 0; this.combo = 0; this.maxCombo = 0; this.mult = 1;
     this.hits = 0; this.tries = 0;
     this.laneLit = [0, 0, 0, 0, 0];
-    this.notes = [];
+    this.words = [];   // live falling words
+    this.queue = [];   // words still to spawn
+    this.laneCursor = 0;
   }
 
-  async start() {
+  start() {
     resumeAudio();
     this.buildDOM();
-    this.player = new StemPlayer('neffex_fight_back');
-    try {
-      await this.player.load((p) => {
-        this.loadEl.textContent = `Loading ${p.currentFile}…  (${p.loaded}/${p.total})`;
-      });
-    } catch (e) {
-      this.loadEl.innerHTML = `Couldn't load the song stems.<br><span style="color:var(--muted);font-size:.8rem">${e.message}</span>`;
-      return;
-    }
-    this.notes = this.player.analyzeNotes(this.difficulty);
-    this.duration = this.player.duration;
+    this.queue = this._buildQueue();
+    this.total = this.queue.length;
+    this.fallMs = FALL_MS[this.difficulty] || FALL_MS.easy;
+    this.spawnMs = SPAWN_MS[this.difficulty] || SPAWN_MS.easy;
     this.initThree();
     this.bindInput();
     this.loadEl.parentElement.classList.add('hidden');
-    this.player.play();
+    bg.play(3);                             // driving chiptune backing (soundfont band next)
+    this.startAt = performance.now() + 3000; // 3s count-in
+    this.lastSpawn = 0;
     this.animate();
   }
+
+  _buildQueue() {
+    const set = WORD_SETS[this.difficulty] || WORD_SETS.easy;
+    const out = [];
+    for (let i = 0; i < 22; i++) out.push(set[Math.floor(Math.random() * set.length)]);
+    return out;
+  }
+
+  _t() { return (performance.now() - this.startAt) / 1000; }
 
   /* ---- DOM scaffold (glass HUD + touch lane pads) ------------------------- */
   buildDOM() {
@@ -60,17 +78,10 @@ export class GuitarMode {
     this.fxLayer = h('div', { class: 'gg-fx' });
     this.countEl = h('div', { class: 'gg-count' });
 
-    // touch lane pads
-    this.pads = KEYS.map((key, lane) => {
-      // no letters on the pads — the letter rides down the neck on the note;
-      // the pad is just a coloured fret button you can also tap.
-      const pad = h('button', { class: 'gg-pad', type: 'button', 'aria-label': `Lane ${key.toUpperCase()}`, style: `--c:${LANE_COLORS[lane]}` },
-        h('span', { class: 'gg-pad-fret' }));
-      pad.addEventListener('pointerdown', (e) => { e.preventDefault(); this.hitLane(lane); });
-      pad.addEventListener('pointerup', () => pad.classList.remove('on'));
-      pad.addEventListener('pointerleave', () => pad.classList.remove('on'));
-      return pad;
-    });
+    // decorative coloured frets under the strum line (you type words now, not lanes)
+    this.pads = KEYS.map((key, lane) => h('button', {
+      class: 'gg-pad', type: 'button', tabindex: '-1', 'aria-hidden': 'true', style: `--c:${LANE_COLORS[lane]}`,
+    }, h('span', { class: 'gg-pad-fret' })));
     const padRow = h('div', { class: 'gg-pads' }, ...this.pads);
 
     const loadWrap = h('div', { class: 'gg-loading' }, this.loadEl = h('div', {}, 'Loading…'));
@@ -199,18 +210,8 @@ export class GuitarMode {
     this.humans = [this.makeHuman(4.6, 'drummer', TARGET_Z - 13.0), this.makeHuman(2.2, 'guitarist', TARGET_Z - 12.2)];
     this.humans.forEach((hm) => scene.add(hm.group));
 
-    // note pool (reused; songs can have hundreds of onsets). Each note carries
-    // a billboard letter so the key you press rides DOWN THE NECK on the note.
-    this.letterMats = KEYS.map((k) => this.makeLetterMat(k.toUpperCase()));
-    this.pool = [];
-    const noteGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.18, 24);
-    for (let i = 0; i < 60; i++) {
-      const m = new THREE.Mesh(noteGeo, new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.7, emissiveIntensity: 0.6 }));
-      const label = new THREE.Sprite(this.letterMats[0]);
-      label.scale.set(0.85, 0.85, 1); label.position.set(0, 0.5, 0);
-      m.add(label); m.userData.label = label;
-      m.visible = false; scene.add(m); this.pool.push(m);
-    }
+    // words are spawned on the fly as billboard labels that fall the neck
+    this.wordGroup = new THREE.Group(); scene.add(this.wordGroup);
 
     this.resize();
     this._ro = new ResizeObserver(() => this.resize());
@@ -225,17 +226,6 @@ export class GuitarMode {
     if (aspect < 1.0) { this.camera.position.set(0, 6.4, TARGET_Z + 6.6); this.camera.lookAt(0, 1.4, TARGET_Z - 9); }
     else { this.camera.position.set(0, 4.6, TARGET_Z + 5.6); this.camera.lookAt(0, 0.6, TARGET_Z - 9); }
     this.camera.updateProjectionMatrix();
-  }
-
-  /* ---- a billboard letter texture for the falling notes ------------------- */
-  makeLetterMat(ch) {
-    const cv = document.createElement('canvas'); cv.width = cv.height = 72;
-    const g = cv.getContext('2d');
-    g.font = '800 50px ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,0.9)'; g.strokeText(ch, 36, 40);
-    g.fillStyle = '#ffffff'; g.fillText(ch, 36, 40);
-    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-    return new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
   }
 
   /* ---- a soft round texture for the haze sprites -------------------------- */
@@ -284,49 +274,105 @@ export class GuitarMode {
     return parts;
   }
 
-  /* ---- input -------------------------------------------------------------- */
+  /* ---- input: type the falling word --------------------------------------- */
   bindInput() {
     this._down = (e) => {
       if (e.key === 'Escape') return this.onExit();
       if (e.repeat) return;
-      const lane = KEYS.indexOf(e.key.toLowerCase());
-      if (lane !== -1) { e.preventDefault(); this.hitLane(lane); }
-    };
-    this._up = (e) => {
-      const lane = KEYS.indexOf(e.key.toLowerCase());
-      if (lane !== -1 && this.pads[lane]) this.pads[lane].classList.remove('on');
+      if (e.key.length === 1 && /[a-z0-9 .,;'-]/i.test(e.key)) { e.preventDefault(); this.typeChar(e.key.toLowerCase()); }
     };
     window.addEventListener('keydown', this._down);
-    window.addEventListener('keyup', this._up);
   }
 
-  hitLane(lane) {
+  // the word nearest the strum line (furthest along its fall) that's still live
+  activeWord() {
+    let best = null, bp = -1; const now = performance.now();
+    for (const w of this.words) {
+      const p = (now - w.spawnT) / this.fallMs;
+      if (p > bp) { bp = p; best = w; }
+    }
+    return best;
+  }
+
+  typeChar(ch) {
     if (this._done) return;
-    this.laneLit[lane] = performance.now();
-    this.pads[lane].classList.add('on');
-    const t = this.player.getCurrentTime();
-    // closest hittable note in lane
-    let best = null, bestDiff = Infinity;
-    for (const n of this.notes) {
-      if (n.lane !== lane || n.hit || n.missed) continue;
-      const d = Math.abs(n.time - t);
-      if (d <= HIT_WINDOW && d < bestDiff) { best = n; bestDiff = d; }
-    }
-    this.tries++;
-    if (best) {
-      best.hit = true; this.hits++;
-      const j = judge(bestDiff);
-      this.combo++; this.maxCombo = Math.max(this.maxCombo, this.combo);
-      this.mult = Math.min(4, Math.floor(this.combo / 10) + 1);
-      this.score += j.pts * this.mult;
-      this.player.unmuteInstrument(lane);
-      this.feedback(lane, j.text, j.tone);
+    const w = this.activeWord();
+    if (!w) return;
+    if (ch === w.text[w.typed]) {
+      w.typed++; this._drawWord(w);
+      if (w.typed >= w.text.length) this.clearWord(w);
     } else {
-      this.combo = 0; this.mult = 1;
-      this.player.muteInstrument(lane);
-      this.feedback(lane, 'MISS', '#ef4444');
+      this.combo = 0; this.mult = 1; playClank(); this.refreshHud();
     }
-    this.refreshHud();
+  }
+
+  clearWord(w) {
+    this.hits++; this.tries++;
+    this.combo++; this.maxCombo = Math.max(this.maxCombo, this.combo);
+    this.mult = Math.min(4, Math.floor(this.combo / 10) + 1);
+    this.score += (10 + w.text.length * 5) * this.mult;
+    this.laneLit[w.lane] = performance.now();
+    playStrum(Math.min(11, this.combo)); playCoin();
+    this.feedback(w.lane, 'NICE', LANE_COLORS[w.lane]);
+    this._popWord(w);
+    this.refreshHud(); this.checkDone();
+  }
+
+  missWord(w) {
+    this.tries++; this.combo = 0; this.mult = 1;
+    playClank();
+    this.feedback(w.lane, 'MISS', '#ef4444');
+    this._popWord(w);
+    this.refreshHud(); this.checkDone();
+  }
+
+  checkDone() {
+    if (!this.queue.length && this.words.length === 0 && !this._finishing) {
+      this._finishing = true; setTimeout(() => this.finish(), 900);
+    }
+  }
+
+  /* ---- falling word billboards -------------------------------------------- */
+  spawnWord() {
+    const text = this.queue.shift();
+    if (text == null) return;
+    const lane = this.laneCursor % LANES; this.laneCursor++;
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(256, 60 + text.length * 34); cv.height = 80;
+    const w = {
+      text, typed: 0, lane, spawnT: performance.now(),
+      canvas: cv, ctx: cv.getContext('2d'), aspect: cv.width / cv.height,
+    };
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    w.tex = tex;
+    w.mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
+    w.sprite = new THREE.Sprite(w.mat);
+    w.baseH = 1.15;
+    this.wordGroup.add(w.sprite);
+    this._drawWord(w);
+    this.words.push(w);
+  }
+
+  _drawWord(w) {
+    const cv = w.canvas, g = w.ctx, W = cv.width, H = cv.height, text = w.text;
+    g.clearRect(0, 0, W, H);
+    g.font = '800 46px ui-monospace, monospace'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    const total = g.measureText(text).width;
+    let x = (W - total) / 2; const y = H / 2;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,0.9)'; g.strokeText(c, x, y);
+      g.fillStyle = i < w.typed ? '#57e08a' : (i === w.typed ? '#fff6c0' : '#ffffff');
+      g.fillText(c, x, y);
+      x += g.measureText(c).width;
+    }
+    w.tex.needsUpdate = true;
+  }
+
+  _popWord(w) {
+    this.wordGroup.remove(w.sprite);
+    w.mat.dispose(); w.tex.dispose();
+    const i = this.words.indexOf(w); if (i >= 0) this.words.splice(i, 1);
   }
 
   feedback(lane, text, color) {
@@ -343,37 +389,33 @@ export class GuitarMode {
   /* ---- loop --------------------------------------------------------------- */
   animate() {
     if (this._dead) return;
-    const t = this.player.getCurrentTime();
+    const t = this._t();
     const now = performance.now() / 1000;
+    const nowMs = performance.now();
 
-    // countdown
+    // count-in
     if (t < 0) { this.countEl.textContent = Math.ceil(-t); this.countEl.classList.add('show'); }
     else { this.countEl.classList.remove('show'); }
 
-    // miss notes that slipped past
-    for (const n of this.notes) {
-      if (!n.hit && !n.missed && n.time < t - HIT_WINDOW) { n.missed = true; this.combo = 0; this.mult = 1; this.player.muteInstrument(n.lane); this.refreshHud(); }
+    // spawn words once the count-in is done
+    if (t >= 0 && this.queue.length && this.words.length < MAX_WORDS && nowMs - this.lastSpawn > this.spawnMs) {
+      this.spawnWord(); this.lastSpawn = nowMs;
     }
 
-    // place visible notes via the pool
-    const speed = SPEEDS[this.difficulty];
-    let pi = 0;
-    for (const n of this.notes) {
-      if (n.hit || n.missed) continue;
-      const dt = n.time - t;
-      if (dt < -0.25 || dt > 4.2) continue;
-      if (pi >= this.pool.length) break;
-      const m = this.pool[pi++];
-      m.visible = true;
-      m.position.set(START_X + n.lane * LANE_W, 0.2, TARGET_Z - dt * speed);
-      const s = Math.abs(dt) < 0.15 ? 1.25 : 1; m.scale.setScalar(s);
-      const col = new THREE.Color(LANE_COLORS[n.lane]);
-      m.material.color.copy(col); m.material.emissive.copy(col);
-      m.userData.label.material = this.letterMats[n.lane]; // letter rides the note
+    // fall the words toward the strum line; the nearest is the active target
+    const act = this.activeWord();
+    let missed = null;
+    for (const w of this.words) {
+      const p = (nowMs - w.spawnT) / this.fallMs;
+      w.sprite.position.set(0, 0.95, TARGET_Z - (1 - p) * FALL_DIST);
+      const sc = w.baseH * (0.55 + 0.7 * Math.min(1, p));
+      w.sprite.scale.set(sc * w.aspect, sc, 1);
+      w.mat.opacity = w === act ? 1 : 0.66;
+      if (p >= 1) { (missed || (missed = [])).push(w); }
     }
-    for (; pi < this.pool.length; pi++) this.pool[pi].visible = false;
+    if (missed) for (const w of missed) this.missWord(w);
 
-    // light up pressed targets
+    // light up the fret targets briefly on a clear
     for (let l = 0; l < LANES; l++) {
       const lit = Math.max(0, 1 - (performance.now() - this.laneLit[l]) / 140);
       this.targets[l].material.emissiveIntensity = lit * 4;
@@ -424,12 +466,11 @@ export class GuitarMode {
       s.material.rotation += 0.0015;
     }
 
-    // progress
-    if (this.duration) this.progEl.style.width = Math.min(100, Math.max(0, (t / this.duration) * 100)) + '%';
+    // progress = words resolved / total
+    const done = this.total - this.queue.length - this.words.length;
+    if (this.total) this.progEl.style.width = Math.min(100, Math.max(0, (done / this.total) * 100)) + '%';
 
     this.renderer.render(this.scene, this.camera);
-
-    if (t > this.duration + 0.5) return this.finish();
     this._raf = requestAnimationFrame(() => this.animate());
   }
 
@@ -448,9 +489,8 @@ export class GuitarMode {
     this._dead = true;
     cancelAnimationFrame(this._raf);
     window.removeEventListener('keydown', this._down);
-    window.removeEventListener('keyup', this._up);
     this._ro && this._ro.disconnect();
-    this.player && this.player.stop();
+    bg.stop();
     if (this.renderer) { this.renderer.dispose(); }
     this.stage && this.stage.remove();
   }
