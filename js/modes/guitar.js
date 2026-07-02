@@ -1,10 +1,11 @@
-/* Guitar God — a rhythm-typing shred on a 3D dive-bar stage (vanilla three.js).
+/* Typing Hero — a rhythm-typing shred on a 3D dive-bar stage (vanilla three.js).
    Whole WORDS fall down the neon fretboard; type each one before it crosses the
    yellow strum line (Tux-Typing "defender" style). Miss and your combo drops.
    Backed by the game's soundtrack — no external song, nothing to license. */
 
 import * as THREE from '../../vendor/three.module.min.js';
 import { drawMansfield } from '../sprite.js';
+import { drawHero } from '../hero-sprite.js';
 import { h, clear } from '../ui.js';
 import { resumeAudio, bg, playStrum, playClank, playCoin } from '../audio.js';
 
@@ -48,7 +49,8 @@ export class GuitarMode {
     this.initThree();
     this.bindInput();
     this.loadEl.parentElement.classList.add('hidden');
-    bg.play(3);                             // driving chiptune backing (soundfont band next)
+    const set = ['rock', 'punk', 'metal', 'surf']; // a fresh energetic track each run
+    bg.play(set[Math.floor(Math.random() * set.length)]);
     this.startAt = performance.now() + 3000; // 3s count-in
     this.lastSpawn = 0;
     this.animate();
@@ -428,7 +430,8 @@ export class GuitarMode {
       if (f !== r.frame) {
         r.frame = f;
         r.ctx.clearRect(0, 0, 64, 64);
-        drawMansfield(r.ctx, 0, 0, 64, t < 0 ? 'idle' : 'run', tick);
+        const st = t < 0 ? 'idle' : 'run';
+        if (!drawHero(r.ctx, 0, 0, 64, st, tick)) drawMansfield(r.ctx, 0, 0, 64, st, tick);
         r.tex.needsUpdate = true;
       }
       r.plane.position.y = r.baseY + Math.abs(Math.sin(now * 6 + r.off)) * 0.2 * r.scale;
