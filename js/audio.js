@@ -7,8 +7,9 @@
 let ctx = null;
 let muted = false;
 
-import { Chiptune } from './chiptune.js';
-export const bg = new Chiptune();
+// `bg` = chiptune (instant) + soundfont band (swaps in when loaded). See music.js.
+export { bg } from './music.js';
+import { bg } from './music.js';
 
 function ac() {
   if (typeof window === 'undefined') return null;
