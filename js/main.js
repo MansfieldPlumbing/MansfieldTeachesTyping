@@ -19,7 +19,7 @@ const MODES = {
     blurb: 'Run the pipe with Mansfield. Type each brick and clog to smash through — and race a ghost of your best.',
   },
   guitar: {
-    num: '02', title: 'Guitar God', tone: 'blue', cls: GuitarMode, song: true,
+    num: '02', title: 'Typing Hero', tone: 'blue', cls: GuitarMode, song: true,
     blurb: 'Shred on a dive-bar stage: whole words fall the neon fretboard — type each before it crosses the strum line. Start easy (sad, bad, jack) and climb. Real 3D, real band.',
   },
   hero: {
