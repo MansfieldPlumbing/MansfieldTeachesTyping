@@ -61,6 +61,30 @@ const GENRES = {
     bas: [40, 0, 44, 0, 45, 0, 44, 0, 43, 0, 45, 0, 47, 0, 45, 0, 38, 0, 42, 0, 43, 0, 42, 0, 40, 0, 43, 0, 45, 0, 47, 0],
     drm: [42, 0, 36, 38, 42, 0, 36, 38, 42, 0, 36, 38, 42, 0, 36, 38, 42, 0, 36, 38, 42, 0, 36, 38, 42, 0, 36, 38, 42, 36, 38, 0],
   },
+  // STAR POWER — frantic 155 BPM arcade invincibility rush. Syncopated
+  // 3-3-3-3-2-2 square-lead arp over a I-bVII-IV-V (C-Bb-F-G) progression, on a
+  // 16th-note grid. Original melody; captures the mechanics, not the notes.
+  star: {
+    bpm: 155, grid: '16th', guitar: 'lead_1_square', bass: 'synth_bass_1', power: false,
+    gtr: [
+      72, 0, 0, 79, 0, 0, 72, 0, 0, 76, 0, 0, 72, 0, 79, 0, // bar1  C: C5 G5 C5 E5 C5 G5
+      70, 0, 0, 77, 0, 0, 70, 0, 0, 74, 0, 0, 70, 0, 77, 0, // bar2 Bb: Bb4 F5 Bb4 D5 Bb4 F5
+      69, 0, 0, 72, 0, 0, 69, 0, 0, 77, 0, 0, 69, 0, 72, 0, // bar3  F: A4 C5 A4 F5 A4 C5
+      71, 0, 0, 74, 0, 0, 71, 0, 0, 79, 0, 0, 71, 0, 74, 0, // bar4  G: B4 D5 B4 G5 B4 D5
+    ],
+    bas: [
+      48, 0, 0, 0, 48, 0, 0, 0, 48, 0, 0, 0, 48, 0, 0, 0,
+      46, 0, 0, 0, 46, 0, 0, 0, 46, 0, 0, 0, 46, 0, 0, 0,
+      41, 0, 0, 0, 41, 0, 0, 0, 41, 0, 0, 0, 41, 0, 0, 0,
+      43, 0, 0, 0, 43, 0, 0, 0, 43, 0, 0, 0, 43, 0, 0, 0,
+    ],
+    drm: [
+      36, 0, 42, 0, 38, 0, 42, 0, 36, 0, 42, 0, 38, 0, 42, 0,
+      36, 0, 42, 0, 38, 0, 42, 0, 36, 0, 42, 0, 38, 0, 42, 0,
+      36, 0, 42, 0, 38, 0, 42, 0, 36, 0, 42, 0, 38, 0, 42, 0,
+      36, 0, 42, 0, 38, 0, 42, 0, 36, 0, 42, 0, 38, 42, 38, 42,
+    ],
+  },
   // relaxed clean-guitar groove for the wordier late levels
   chill: {
     bpm: 108, guitar: 'electric_guitar_clean', bass: 'acoustic_bass', power: false,
@@ -128,18 +152,20 @@ export class WavetableBand {
 
   _tick() {
     if (!this.playing || !this.ac) return;
-    const cfg = this.cfg, eighth = 60 / cfg.bpm / 2;
+    const cfg = this.cfg;
+    const stepDur = 60 / cfg.bpm / (cfg.grid === '16th' ? 4 : 2); // 8th grid by default
+    const len = cfg.gtr.length;
     while (this.nextTime < this.ac.currentTime + 0.2) {
       const t = this.nextTime, s = this.step;
       const gn = cfg.gtr[s];
       if (gn > 0) {
-        this._g.play(gn, t, { duration: eighth * 0.9 });
-        if (cfg.power) this._g.play(gn + 7, t, { duration: eighth * 0.9 }); // power-chord fifth
+        this._g.play(gn, t, { duration: stepDur * 0.9 });
+        if (cfg.power) this._g.play(gn + 7, t, { duration: stepDur * 0.9 }); // power-chord fifth
       }
-      const bn = cfg.bas[s]; if (bn > 0) this._b.play(bn, t, { duration: eighth * 0.95 });
+      const bn = cfg.bas[s]; if (bn > 0) this._b.play(bn, t, { duration: stepDur * 0.95 });
       const dn = cfg.drm[s];
       if (dn > 0) { this._d.play(dn, t, { duration: 0.3 }); if (dn !== 42) this._d.play(42, t, { duration: 0.1 }); }
-      this.nextTime += eighth; this.step = (this.step + 1) % 32;
+      this.nextTime += stepDur; this.step = (this.step + 1) % len;
     }
     this._timer = setTimeout(() => this._tick(), 25);
   }

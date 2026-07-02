@@ -49,7 +49,7 @@ export class GuitarMode {
     this.initThree();
     this.bindInput();
     this.loadEl.parentElement.classList.add('hidden');
-    const set = ['rock', 'punk', 'metal', 'surf']; // a fresh energetic track each run
+    const set = ['rock', 'punk', 'metal', 'surf', 'star']; // a fresh energetic track each run
     bg.play(set[Math.floor(Math.random() * set.length)]);
     this.startAt = performance.now() + 3000; // 3s count-in
     this.lastSpawn = 0;
@@ -430,8 +430,8 @@ export class GuitarMode {
       if (f !== r.frame) {
         r.frame = f;
         r.ctx.clearRect(0, 0, 64, 64);
-        const st = t < 0 ? 'idle' : 'run';
-        if (!drawHero(r.ctx, 0, 0, 64, st, tick)) drawMansfield(r.ctx, 0, 0, 64, st, tick);
+        // on stage he rocks in place — never the walk cycle
+        if (!drawHero(r.ctx, 0, 0, 64, 'idle', tick)) drawMansfield(r.ctx, 0, 0, 64, 'idle', tick);
         r.tex.needsUpdate = true;
       }
       r.plane.position.y = r.baseY + Math.abs(Math.sin(now * 6 + r.off)) * 0.2 * r.scale;
