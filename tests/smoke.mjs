@@ -61,9 +61,9 @@ try {
   await page.waitForSelector('.lesson', { timeout: 5000 });
   await page.click('.lesson:nth-child(1)');
   await page.waitForSelector('.focus-text', { timeout: 5000 });
-  await typeText(page, 'ff dd');
+  await typeText(page, 'fff');
   const done = await page.$eval('.focus-text .done', (e) => e.textContent);
-  if (!done.startsWith('ff dd')) throw new Error('focus typing not tracking: ' + JSON.stringify(done));
+  if (!done.startsWith('fff')) throw new Error('focus typing not tracking: ' + JSON.stringify(done));
   console.log('focus ok — caret advances, typed:', JSON.stringify(done));
 
   // exit returns to lesson-select; go back to landing, then screenshot
